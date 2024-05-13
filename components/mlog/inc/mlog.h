@@ -15,9 +15,16 @@
 
 void mlog_init(void);
 
+void mlog_hex_d(char* string, uint8_t* buf, uint32_t size);
+
+void mlog_hex_i(char* string, uint8_t* buf, uint32_t size);
+
+void mlog_hex_w(char* string, uint8_t* buf, uint32_t size);
+
+void mlog_hex_e(char* string, uint8_t* buf, uint32_t size);
+
 #if MLOG_LEVEL >= LOG_DBG_LEVEL
 #define mlog_d(format, ...) printf("D: " format "\r\n", ##__VA_ARGS__)
-void mlog_hex_d(char* string, uint8_t* buf, uint32_t size);
 #else
 #define mlog_d(...)
 #endif
