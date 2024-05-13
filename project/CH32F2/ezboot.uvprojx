@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>.\SRC\StdPeriphDriver\inc;.\SRC\CMSIS;.\chip;..\..\components\mlog\inc;..\..\components\boot\inc;..\..\components\ota_mgr\inc;..\..\components\sfud\inc;..\..\components\fal\inc;.\porting\fal;..\..\components\ota\inc;.\config</IncludePath>
+              <IncludePath>.\SRC\StdPeriphDriver\inc;.\SRC\CMSIS;.\chip;..\..\components\mlog\inc;..\..\components\boot\inc;..\..\components\ota_mgr\inc;..\..\components\sfud\inc;..\..\components\fal\inc;.\porting\fal;..\..\components\ota\inc;.\config;.\porting\mcu_header</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -603,16 +603,16 @@
               <FileType>1</FileType>
               <FilePath>..\..\components\sfud\src\sfud_sfdp.c</FilePath>
             </File>
+            <File>
+              <FileName>boot.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\components\boot\src\boot.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
           <GroupName>porting</GroupName>
           <Files>
-            <File>
-              <FileName>ch32f2_boot.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\porting\boot\ch32f2_boot.c</FilePath>
-            </File>
             <File>
               <FileName>fal_flash_ch32f2_port.c</FileName>
               <FileType>1</FileType>

@@ -1,5 +1,5 @@
 #include <boot.h>
-#include <ch32f20x.h>
+#include <mcu_header.h>
 
 
 uint32_t JumpAddress =0;

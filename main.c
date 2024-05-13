@@ -4,7 +4,6 @@
 #include <mlog.h>
 #include <ota.h>
 #include <ota_mgr.h>
-#include <fal.h>
 
 
 int main( void )
