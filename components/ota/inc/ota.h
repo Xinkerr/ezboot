@@ -16,8 +16,8 @@ typedef struct
     uint32_t fw_version;
     uint32_t image_size;
     uint32_t crc;
-    uint32_t random;
-    uint8_t key[16];
+    uint8_t salt[16];
+    uint8_t iv[16];
 }ota_image_info_t;
 
 

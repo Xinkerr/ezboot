@@ -191,7 +191,6 @@ int ota_firmware_update(void)
     mlog_d("[data_version]: 0x%08x", image_info.data_version);
     mlog_d("[image_size]: %u", image_info.image_size);
     mlog_d("[crc]: 0x%08x", image_info.crc);
-    mlog_d("[random]: 0x%08x", image_info.random);
 
     mlog("checking head...");
     if(memcmp(image_info.head, "OTAB", sizeof(image_info.head)) == 0)

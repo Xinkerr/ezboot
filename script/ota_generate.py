@@ -16,17 +16,10 @@ with open('config.h', 'r') as f:
             OTA_VERSION = int(line.split()[-1], 16)
             OTA_VERSION_MAJOR = (OTA_VERSION >> 16) & 0xFFFF
             OTA_VERSION_MINOR = OTA_VERSION & 0xFFFF
-        elif line.startswith('#define CONFIG_ENCRYPTION_KEY'):
-            ENCRYPTION_KEY = bytes.fromhex(line.split()[-1][1:-1])
 
 # 定义头部信息参数
 HEADER_LENGTH = 128
 HEAD_DATA = b'OTAB' 
-
-def get_true_random_data():
-    """生成真随机数"""
-    random.seed(time.time_ns())
-    return random.getrandbits(32)
 
 def convert_hex_to_bin(hex_file, bin_file):
     # 读取 Intel HEX 文件
@@ -39,8 +32,11 @@ def convert_hex_to_bin(hex_file, bin_file):
     # 计算 bin 文件大小
     file_size = len(bin_data)
 
-    # 生成真随机数
-    random_data = get_true_random_data()
+    # 生成随机盐和AES IV
+    random_salt = os.urandom(16)
+    print(f"Random Salt: {random_salt.hex()}")
+    aes_iv = os.urandom(16)
+    print(f"AES IV: {aes_iv.hex()}")
 
     # 构建头部信息
     header_items = [
@@ -50,8 +46,8 @@ def convert_hex_to_bin(hex_file, bin_file):
         struct.pack('I', OTA_VERSION),
         struct.pack('I', file_size),
         struct.pack('I', crc32),
-        struct.pack('I', random_data),
-        ENCRYPTION_KEY
+        random_salt,
+        aes_iv
     ]
     header_size = sum(len(item) for item in header_items)
     header = b''.join(header_items)
@@ -75,5 +71,5 @@ if __name__ == "__main__":
     hex_file = args.hex_file
     # bin_file = os.path.splitext(hex_file)[0] + ".bin"
     # 生成输出文件名
-    bin_file = os.path.splitext(hex_file)[0] + f"_v{OTA_VERSION_MAJOR:X}.{OTA_VERSION_MINOR:X}.ota"
+    bin_file = os.path.splitext(hex_file)[0] + f"_v{OTA_VERSION_MAJOR:X}.{OTA_VERSION_MINOR:X}.bin"
     convert_hex_to_bin(hex_file, bin_file)
