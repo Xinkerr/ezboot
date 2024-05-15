@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>.\SRC\StdPeriphDriver\inc;.\SRC\CMSIS;.\chip;..\..\components\mlog\inc;..\..\components\boot\inc;..\..\components\ota_mgr\inc;..\..\components\sfud\inc;..\..\components\fal\inc;.\porting\fal;..\..\components\ota\inc;.\config;.\porting\mcu_header</IncludePath>
+              <IncludePath>.\SRC\StdPeriphDriver\inc;.\SRC\CMSIS;.\chip;..\..\components\mlog\inc;..\..\components\boot\inc;..\..\components\ota_mgr\inc;..\..\components\sfud\inc;..\..\components\fal\inc;.\porting\fal;..\..\components\ota\inc;.\config;.\porting\mcu_header;..\..\components\crypt\inc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -607,6 +607,31 @@
               <FileName>boot.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\components\boot\src\boot.c</FilePath>
+            </File>
+            <File>
+              <FileName>aes_decrypt.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\components\crypt\src\aes_decrypt.c</FilePath>
+            </File>
+            <File>
+              <FileName>aes_encrypt.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\components\crypt\src\aes_encrypt.c</FilePath>
+            </File>
+            <File>
+              <FileName>ccm_mode.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\components\crypt\src\ccm_mode.c</FilePath>
+            </File>
+            <File>
+              <FileName>sha256.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\components\crypt\src\sha256.c</FilePath>
+            </File>
+            <File>
+              <FileName>utils.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\components\crypt\src\utils.c</FilePath>
             </File>
           </Files>
         </Group>
