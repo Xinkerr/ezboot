@@ -276,7 +276,7 @@
               <OCR_RVCT4>
                 <Type>1</Type>
                 <StartAddress>0x8000000</StartAddress>
-                <Size>0x6000</Size>
+                <Size>0x7000</Size>
               </OCR_RVCT4>
               <OCR_RVCT5>
                 <Type>1</Type>
@@ -619,11 +619,6 @@
               <FilePath>..\..\components\crypt\src\aes_encrypt.c</FilePath>
             </File>
             <File>
-              <FileName>ccm_mode.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\components\crypt\src\ccm_mode.c</FilePath>
-            </File>
-            <File>
               <FileName>sha256.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\components\crypt\src\sha256.c</FilePath>
@@ -632,6 +627,16 @@
               <FileName>utils.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\components\crypt\src\utils.c</FilePath>
+            </File>
+            <File>
+              <FileName>image_decrypt.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\components\crypt\src\image_decrypt.c</FilePath>
+            </File>
+            <File>
+              <FileName>cbc_mode.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\components\crypt\src\cbc_mode.c</FilePath>
             </File>
           </Files>
         </Group>

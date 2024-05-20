@@ -1,6 +1,8 @@
 #ifndef __OTA_H__
 #define __OTA_H__
 #include <stdint.h>
+#include <boot_config.h>
+
 #define OTA_HEADER_SIZE             128
 
 #define OTA_SUCCESS                  0
@@ -16,8 +18,10 @@ typedef struct
     uint32_t fw_version;
     uint32_t image_size;
     uint32_t crc;
-    uint8_t salt[16];
-    uint8_t iv[16];
+    #if CONFIG_OTA_IMAGE_AES128_ENCRYPT
+        uint8_t key_salt[16];
+        uint8_t iv_salt[16];
+    #endif
 }ota_image_info_t;
 
 

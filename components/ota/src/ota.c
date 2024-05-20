@@ -4,11 +4,37 @@
 #include <ota.h>
 #include <fal.h>
 #include <fw_partition.h>
+#include <image_decrypt.h>
 #include <mlog.h>
 
+//AES128加密开启时，该值必须是128bits整数倍
 #define WRITE_BLOCK         4096
 
 static uint8_t cache_buf[WRITE_BLOCK];
+#if CONFIG_OTA_IMAGE_AES128_ENCRYPT
+static uint8_t write_buf[WRITE_BLOCK];
+#endif
+
+
+/**
+ * 对长度进行对齐操作。
+ * 
+ * 该函数将给定的长度按照指定的对齐大小进行对齐，确保返回的长度满足对齐要求。
+ * 如果给定的长度已经满足对齐要求，则直接返回该长度；如果不满足，则调整长度使其满足对齐要求。
+ * 
+ * @param length 需要进行对齐操作的原始长度。
+ * @param align_to 对齐的目标大小，即要求的对齐边界。
+ * @return 对齐后的长度。该长度要么与原始长度相同（如果原始长度已经满足对齐要求），要么是满足对齐要求的下一个较大长度。
+ */
+uint16_t align_length(uint16_t length, uint16_t align_to) {
+    // 检查原始长度是否已经满足对齐要求
+    if (length % align_to == 0) {
+        return length;
+    } else {
+        // 计算并返回满足对齐要求的下一个长度
+        return length + (align_to - (length % align_to));
+    }
+}
 
 static uint32_t crc32(uint32_t initial_value, const void *data, size_t length, bool eof) 
 {
@@ -111,6 +137,11 @@ static int image_write_app(const ota_image_info_t* info)
         return OTA_FLASH_ERR;
     }
 
+    #if CONFIG_OTA_IMAGE_AES128_ENCRYPT
+        image_decrypt_init(info->key_salt, sizeof(info->key_salt), 
+                            info->iv_salt, sizeof(info->iv_salt));
+    #endif
+
     //擦除APP区域
     mlog("erase app...");
     ret = fal_partition_erase_all(app_pt);
@@ -134,7 +165,12 @@ static int image_write_app(const ota_image_info_t* info)
                 mlog_e("read ota_image partition error, 0x%x", offset+OTA_HEADER_SIZE);
                 return OTA_FLASH_ERR;
             }
-            ret = fal_partition_write(app_pt, offset, cache_buf, WRITE_BLOCK);
+            #if CONFIG_OTA_IMAGE_AES128_ENCRYPT
+                image_decrypt_data(cache_buf, WRITE_BLOCK, write_buf);
+                ret = fal_partition_write(app_pt, offset, write_buf, WRITE_BLOCK);
+            #else
+                ret = fal_partition_write(app_pt, offset, cache_buf, WRITE_BLOCK);
+            #endif
             if(ret < 0)
             {
                 mlog_e("write app partition error, 0x%x", offset);
@@ -152,7 +188,12 @@ static int image_write_app(const ota_image_info_t* info)
                 mlog_e("read ota_image partition error, 0x%x", offset+OTA_HEADER_SIZE);
                 return OTA_FLASH_ERR;
             }
-            ret = fal_partition_write(app_pt, offset, cache_buf, remaining);
+            #if CONFIG_OTA_IMAGE_AES128_ENCRYPT
+                image_decrypt_data(cache_buf, align_length((uint16_t)remaining,16), write_buf);
+                ret = fal_partition_write(app_pt, offset, write_buf, remaining);
+            #else
+                ret = fal_partition_write(app_pt, offset, cache_buf, remaining);
+            #endif
             if(ret < 0)
             {
                 mlog_e("write app partition error, 0x%x", offset);
@@ -191,6 +232,10 @@ int ota_firmware_update(void)
     mlog_d("[data_version]: 0x%08x", image_info.data_version);
     mlog_d("[image_size]: %u", image_info.image_size);
     mlog_d("[crc]: 0x%08x", image_info.crc);
+    #if CONFIG_OTA_IMAGE_AES128_ENCRYPT
+        mlog_hex_d("[key salt]:", image_info.key_salt, sizeof(image_info.key_salt));
+        mlog_hex_d("[iv salt]:", image_info.iv_salt, sizeof(image_info.iv_salt));
+    #endif
 
     mlog("checking head...");
     if(memcmp(image_info.head, "OTAB", sizeof(image_info.head)) == 0)
