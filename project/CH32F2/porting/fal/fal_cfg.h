@@ -31,9 +31,9 @@ extern struct fal_flash_dev nor_flash0;
 /* partition table */
 #define FAL_PART_TABLE                                                               \
 {                                                                                    \
-    {FAL_PART_MAGIC_WORD,       "boot",     "ch32_onchip",  0,          24*1024, 0}, \
-    {FAL_PART_MAGIC_WORD,       "ota_mgr",  "ch32_onchip",  24*1024,    4*1024, 0}, \
-    {FAL_PART_MAGIC_WORD,       "app",      "ch32_onchip",  28*1024,    100*1024, 0}, \
+    {FAL_PART_MAGIC_WORD,       "boot",     "ch32_onchip",  0,          28*1024, 0}, \
+    {FAL_PART_MAGIC_WORD,       "ota_mgr",  "ch32_onchip",  28*1024,    4*1024, 0}, \
+    {FAL_PART_MAGIC_WORD,       "app",      "ch32_onchip",  32*1024,    96*1024, 0}, \
     {FAL_PART_MAGIC_WORD,       "FlashDB",  "norflash0",    0,          16*1024, 0}, \
     {FAL_PART_MAGIC_WORD,       "ota_image", "norflash0",   1024*1024,  1024*1024, 0}, \
 }
