@@ -1,6 +1,6 @@
 #include <ch32f20x.h>
 #include <stdio.h>
-#include <boot_config.h>
+#include <ezboot_config.h>
 #define LOG_UART1           1
 #define LOG_UART2           2
 #define LOG_UART3           3

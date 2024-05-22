@@ -399,9 +399,9 @@
               <FilePath>.\chip\system_ch32f20x.c</FilePath>
             </File>
             <File>
-              <FileName>boot_config.h</FileName>
+              <FileName>ezboot_config.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\config\boot_config.h</FilePath>
+              <FilePath>.\config\ezboot_config.h</FilePath>
             </File>
           </Files>
         </Group>

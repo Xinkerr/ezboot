@@ -1,7 +1,7 @@
 #ifndef __LOG_H__
 #define __LOG_H__
 #include <stdio.h>
-#include <boot_config.h>
+#include <ezboot_config.h>
 
 #define LOG_OFF_LEVEL           0
 #define LOG_ERR_LEVEL           1
