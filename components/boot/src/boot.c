@@ -1,4 +1,5 @@
 #include <boot.h>
+#include <ezboot_config.h>
 #include <mcu_header.h>
 
 

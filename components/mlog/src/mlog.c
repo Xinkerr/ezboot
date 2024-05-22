@@ -15,7 +15,7 @@ __inline void mlog_init(void) {}
 #if MLOG_LEVEL >= LOG_DBG_LEVEL
 __inline void mlog_hex_d(char* string, uint8_t* buf, uint32_t size)
 {
-    printf("D:%s", string);
+    printf("D: %s", string);
     for(int i=0; i<size; i++)
     {
         printf("%02x", buf[i]);
@@ -29,7 +29,7 @@ __inline void mlog_hex_d(char* string, uint8_t* buf, uint32_t size) {}
 #if MLOG_LEVEL >= LOG_INF_LEVEL
 __inline void mlog_hex_i(char* string, uint8_t* buf, uint32_t size)
 {
-    printf("I:%s", string);
+    printf("I: %s", string);
     for(int i=0; i<size; i++)
     {
         printf("%02x", buf[i]);
@@ -43,7 +43,7 @@ __inline void mlog_hex_i(char* string, uint8_t* buf, uint32_t size) {}
 #if MLOG_LEVEL >= LOG_WRN_LEVEL
 __inline void mlog_hex_w(char* string, uint8_t* buf, uint32_t size)
 {
-    printf("W:%s", string);
+    printf("W: %s", string);
     for(int i=0; i<size; i++)
     {
         printf("%02x", buf[i]);
@@ -57,7 +57,7 @@ __inline void mlog_hex_w(char* string, uint8_t* buf, uint32_t size) {}
 #if MLOG_LEVEL >= LOG_ERR_LEVEL
 __inline void mlog_hex_e(char* string, uint8_t* buf, uint32_t size)
 {
-    printf("E:%s", string);
+    printf("E: %s", string);
     for(int i=0; i<size; i++)
     {
         printf("%02x", buf[i]);

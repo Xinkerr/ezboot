@@ -1,7 +1,7 @@
-#include <ch32f20x.h>
 #include <string.h>
-#include <fw_partition.h>
+#include <ezboot_config.h>
 #include <ota_mgr.h>
+#include <ezb_flash.h>
 
 // Adler-32 算法
 uint32_t calculate_adler32(const uint8_t *data, size_t len) {
@@ -18,34 +18,19 @@ uint32_t calculate_adler32(const uint8_t *data, size_t len) {
 
 int ota_mgr_state_set(ota_mgr_state_t state)
 {
-	int i;
-    int ret;
-    uint32_t* p;
     ota_mgr_data_t data;
     data.ota_state = state;
     data.check_sum = calculate_adler32((const uint8_t *)&data, sizeof(data)-4);
-    p = (uint32_t*)&data;
-    FLASH_Unlock();
-    FLASH_ClearFlag(FLASH_FLAG_BSY | FLASH_FLAG_EOP |FLASH_FLAG_WRPRTERR);
-    FLASH_ErasePage(OTA_MGR_DATA_ADDRESS);
-    for(i=0; i<sizeof(ota_mgr_data_t); i +=4)
-    {
-        ret = FLASH_ProgramWord(OTA_MGR_DATA_ADDRESS+i, p[i]);
-        if(ret != FLASH_COMPLETE)
-        {
-            FLASH_Lock();
-            return ret;
-        }
-    }
-    FLASH_Lock();
+    ezb_flash_erase(OTA_MGR_DATA_ADDRESS, OTA_MGR_REGION_SIZE);
+    ezb_flash_write(OTA_MGR_DATA_ADDRESS, (uint8_t*)&data, sizeof(ota_mgr_data_t));
     return 0;
 }
 
 ota_mgr_state_t ota_mgr_state_get(void)
 {
     ota_mgr_data_t data;
-    memcpy(&data, (const void*)OTA_MGR_DATA_ADDRESS, sizeof(ota_mgr_data_t));
-    if(calculate_adler32((const uint8_t *)&data, sizeof(data)-4))
+    ezb_flash_read(OTA_MGR_DATA_ADDRESS, (uint8_t*)&data, sizeof(ota_mgr_data_t));
+    if(calculate_adler32((const uint8_t *)&data, sizeof(data)-4) == data.check_sum)
     {
         return data.ota_state;
     }
