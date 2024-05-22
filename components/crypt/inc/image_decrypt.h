@@ -2,7 +2,7 @@
 #define __IMAGE_DECRYPT_H__
 
 #include <stdint.h>
-#include <boot_config.h>
+#include <ezboot_config.h>
 #if CONFIG_OTA_IMAGE_AES128_ENCRYPT
 
 /**
@@ -29,7 +29,7 @@ int image_decrypt_init(const uint8_t* key_salt, uint16_t ks_len,
  * @param ou_data 指向用于存储解密后数据的输出缓冲区的指针。
  * @return 函数执行成功返回0，输入参数无效返回-1。
  */
-int image_decrypt_data(const uint8_t *in_data, uint32_t len, uint8_t* ou_data);
+int image_decrypt_data(uint8_t *in_data, uint32_t len, uint8_t* ou_data);
 
 #endif //CONFIG_OTA_IMAGE_AES128_ENCRYPT
 

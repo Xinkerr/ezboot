@@ -101,23 +101,25 @@ int image_decrypt_init(const uint8_t* key_salt, uint16_t ks_len,
  * @param ou_data 指向用于存储解密后数据的输出缓冲区的指针。
  * @return 函数执行成功返回0，输入参数无效返回-1。
  */
-int image_decrypt_data(const uint8_t *in_data, uint32_t len, uint8_t* ou_data)
+int image_decrypt_data(uint8_t *in_data, uint32_t len, uint8_t* ou_data)
 {
     // 检查输入参数是否有效
     if(in_data == NULL || len == 0 || ou_data == NULL)
         return -1;
 
+    // mlog_hex_d("encrypt data: ", in_data, len);
     // 初始化解密缓存，将解密向量复制到缓存的开始部分，然后将输入数据复制到缓存的剩余部分
     memcpy(decrypting_cache, decrypt_iv, sizeof(decrypt_iv));
     memcpy(decrypting_cache+sizeof(decrypt_iv), in_data, len);
+    // mlog_hex_d("decrypting_cache: ", decrypting_cache, len+sizeof(decrypt_iv));
     
     // 使用AES-CBC模式对数据进行解密
-    tc_cbc_mode_decrypt(ou_data, len-TC_AES_BLOCK_SIZE, 
+    tc_cbc_mode_decrypt(ou_data, len, 
                         in_data, len, 
-                        decrypting_cache, &tc_aes_sched);
-                        
+                        decrypting_cache, &tc_aes_sched);  
     // 更新解密向量，将其设置为解密后数据的最后TC_AES_BLOCK_SIZE字节
-    memcpy(decrypt_iv, decrypting_cache+len-TC_AES_BLOCK_SIZE, TC_AES_BLOCK_SIZE);
+    memcpy(decrypt_iv, decrypting_cache+len, TC_AES_BLOCK_SIZE);
+    // mlog_hex_d("decrypt_iv: ", decrypt_iv, 16);
     
     // 记录解密后的数据，主要用于调试和日志记录
     mlog_hex_d("decrypt data: ", ou_data, len);

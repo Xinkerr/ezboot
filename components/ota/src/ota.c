@@ -6,6 +6,7 @@
 #include <fw_partition.h>
 #include <image_decrypt.h>
 #include <mlog.h>
+#include <ezboot_config.h>
 
 //AES128加密开启时，该值必须是128bits整数倍
 #define WRITE_BLOCK         4096
@@ -91,7 +92,11 @@ static bool image_data_check(const ota_image_info_t* info)
 
     image_pt = fal_partition_find("ota_image");
 
-    remaining = info->image_size;
+    #if CONFIG_OTA_IMAGE_AES128_ENCRYPT
+        remaining = info->encrypt_len;
+    #else
+        remaining = info->image_size;
+    #endif
 
     //读取所有image数据，并进行分块CRC计算
     while (remaining)
@@ -121,6 +126,7 @@ static bool image_data_check(const ota_image_info_t* info)
         return false;
     }
 }
+
 
 static int image_write_app(const ota_image_info_t* info)
 {
@@ -182,16 +188,22 @@ static int image_write_app(const ota_image_info_t* info)
         }
         else
         {
-            ret = fal_partition_read(image_pt, offset+OTA_HEADER_SIZE, cache_buf, remaining);
-            if(ret < 0)
-            {
-                mlog_e("read ota_image partition error, 0x%x", offset+OTA_HEADER_SIZE);
-                return OTA_FLASH_ERR;
-            }
             #if CONFIG_OTA_IMAGE_AES128_ENCRYPT
+                ret = fal_partition_read(image_pt, offset+OTA_HEADER_SIZE, cache_buf, align_length((uint16_t)remaining,16));
+                if(ret < 0)
+                {
+                    mlog_e("read ota_image partition error, 0x%x", offset+OTA_HEADER_SIZE);
+                    return OTA_FLASH_ERR;
+                }
                 image_decrypt_data(cache_buf, align_length((uint16_t)remaining,16), write_buf);
                 ret = fal_partition_write(app_pt, offset, write_buf, remaining);
             #else
+                ret = fal_partition_read(image_pt, offset+OTA_HEADER_SIZE, cache_buf, remaining);
+                if(ret < 0)
+                {
+                    mlog_e("read ota_image partition error, 0x%x", offset+OTA_HEADER_SIZE);
+                    return OTA_FLASH_ERR;
+                }
                 ret = fal_partition_write(app_pt, offset, cache_buf, remaining);
             #endif
             if(ret < 0)
@@ -227,14 +239,15 @@ int ota_firmware_update(void)
 
     image_header_get(&image_info);
     mlog("\r\n");
-    mlog_d("[head]: 0x%08x", image_info.head);
-    mlog_d("[header_len]: %u", image_info.header_len);
-    mlog_d("[data_version]: 0x%08x", image_info.data_version);
-    mlog_d("[image_size]: %u", image_info.image_size);
-    mlog_d("[crc]: 0x%08x", image_info.crc);
+    mlog_i("[head]: 0x%08x", image_info.head);
+    mlog_i("[header_len]: %u", image_info.header_len);
+    mlog_i("[data_version]: 0x%08x", image_info.data_version);
+    mlog_i("[image_size]: %u", image_info.image_size);
+    mlog_i("[crc]: 0x%08x", image_info.crc);
     #if CONFIG_OTA_IMAGE_AES128_ENCRYPT
-        mlog_hex_d("[key salt]:", image_info.key_salt, sizeof(image_info.key_salt));
-        mlog_hex_d("[iv salt]:", image_info.iv_salt, sizeof(image_info.iv_salt));
+        mlog_d("[encrypt_len]: %u", image_info.encrypt_len);
+        mlog_hex_d("[key salt]: ", image_info.key_salt, sizeof(image_info.key_salt));
+        mlog_hex_d("[iv salt]: ", image_info.iv_salt, sizeof(image_info.iv_salt));
     #endif
 
     mlog("checking head...");

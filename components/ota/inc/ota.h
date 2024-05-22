@@ -1,7 +1,7 @@
 #ifndef __OTA_H__
 #define __OTA_H__
 #include <stdint.h>
-#include <boot_config.h>
+#include <ezboot_config.h>
 
 #define OTA_HEADER_SIZE             128
 
@@ -19,6 +19,7 @@ typedef struct
     uint32_t image_size;
     uint32_t crc;
     #if CONFIG_OTA_IMAGE_AES128_ENCRYPT
+        uint32_t encrypt_len;
         uint8_t key_salt[16];
         uint8_t iv_salt[16];
     #endif
