@@ -30,6 +30,7 @@
 #include <sfud.h>
 #include <stdarg.h>
 #include <ch32f20x.h>
+#include <mlog.h>
 
 typedef struct {
     SPI_TypeDef *spix;
@@ -224,15 +225,17 @@ sfud_err sfud_spi_port_init(sfud_flash *flash) {
  * @param ... args
  */
 void sfud_log_debug(const char *file, const long line, const char *format, ...) {
+    #if MLOG_LEVEL >= LOG_DBG_LEVEL
     va_list args;
-
+    
     /* args point to the first variable parameter */
     va_start(args, format);
-    printf("[SFUD](%s:%ld) ", file, line);
+    mlog("[SFUD](%s:%ld) ", file, line);
     /* must use vprintf to print */
     vsnprintf(log_buf, sizeof(log_buf), format, args);
-    printf("%s\r\n", log_buf);
+    mlog("%s\r\n", log_buf);
     va_end(args);
+    #endif
 }
 
 /**
@@ -242,13 +245,15 @@ void sfud_log_debug(const char *file, const long line, const char *format, ...) 
  * @param ... args
  */
 void sfud_log_info(const char *format, ...) {
+    #if MLOG_LEVEL >= LOG_INF_LEVEL
     va_list args;
 
     /* args point to the first variable parameter */
     va_start(args, format);
-    printf("[SFUD]");
+    mlog("[SFUD]");
     /* must use vprintf to print */
     vsnprintf(log_buf, sizeof(log_buf), format, args);
-    printf("%s\r\n", log_buf);
+    mlog("%s\r\n", log_buf);
     va_end(args);
+    #endif
 }
