@@ -2,16 +2,30 @@
 #include <norflash.h>
 #include <mlog.h>
 
+#define CMD_PAGE_PROGRAM                            0x02
 #define CMD_READ_DATA                               0x03
 #define CMD_WRITE_DISABLE                           0x04
 #define CMD_READ_STATUS_REGISTER                    0x05
 #define CMD_WRITE_ENABLE                            0x06
 #define CMD_MANUFACTURER_DEVICE_ID                  0x90
 
-#define CMD_PAGE_PROGRAM                            0x02
+#ifdef CONFIG_NORFLASH_CMD_SECTOR_ERASE
+#define CMD_SECTOR_ERASE                            CONFIG_NORFLASH_CMD_SECTOR_ERASE
+#else
 #define CMD_SECTOR_ERASE                            0x20
+#endif
+
+#ifdef CONFIG_NORFLASH_ERASE_SIZE
+#define ERASE_SIZE                                  CONFIG_NORFLASH_ERASE_SIZE
+#else
 #define ERASE_SIZE                                  4096
+#endif
+
+#ifdef CONFIG_NORFLASH_PAGE_SIZE
+#define PAGE_SIZE                                   CONFIG_NORFLASH_PAGE_SIZE
+#else
 #define PAGE_SIZE                                   256
+#endif
 
 static void norflash_write_enable(void)   
 {
