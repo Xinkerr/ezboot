@@ -3,7 +3,7 @@
 
 //LOG UART
 #define CONFIG_LOG_UART_BAUDRATE            115200
-#define CONFIG_LOG_LEVEL                    4 //LEVEL INF
+#define CONFIG_LOG_LEVEL                    3 //LEVEL INF
 
 //OTA image
 #define CONFIG_OTA_IMAGE_AES128_ENCRYPT     1

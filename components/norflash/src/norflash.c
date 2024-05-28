@@ -60,7 +60,6 @@ int norflash_init(void)
 {
     norflash_spi_init();
     uint16_t norflash_id = norflash_read_ID();
-    mlog("12321434324");
     mlog_hex_i("norflash ID: ", &norflash_id, sizeof(norflash_id));
     return 0;
 }
