@@ -1,6 +1,7 @@
 #ifndef __LOG_H__
 #define __LOG_H__
 #include <stdio.h>
+#include <stdint.h>
 #include <ezboot_config.h>
 
 #define LOG_OFF_LEVEL           0
@@ -15,13 +16,13 @@
 
 void mlog_init(void);
 
-void mlog_hex_d(char* string, uint8_t* buf, uint32_t size);
+void mlog_hex_d(char* string, const void* buf, uint32_t size);
 
-void mlog_hex_i(char* string, uint8_t* buf, uint32_t size);
+void mlog_hex_i(char* string, const void* buf, uint32_t size);
 
-void mlog_hex_w(char* string, uint8_t* buf, uint32_t size);
+void mlog_hex_w(char* string, const void* buf, uint32_t size);
 
-void mlog_hex_e(char* string, uint8_t* buf, uint32_t size);
+void mlog_hex_e(char* string, const void* buf, uint32_t size);
 
 #if MLOG_LEVEL >= LOG_DBG_LEVEL
 #define mlog_d(format, ...) printf("D: " format "\r\n", ##__VA_ARGS__)
