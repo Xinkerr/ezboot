@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <ota.h>
-#include <sfud.h>
+#include <norflash.h>
 #include <ezb_flash.h>
 #include <image_decrypt.h>
 #include <mlog.h>
@@ -15,8 +15,6 @@ static uint8_t cache_buf[WRITE_BLOCK];
 #if CONFIG_OTA_IMAGE_AES128_ENCRYPT
 static uint8_t write_buf[WRITE_BLOCK];
 #endif
-
-const sfud_flash *extflash = NULL;
 
 /**
  * 对长度进行对齐操作。
@@ -67,7 +65,8 @@ static int image_header_get(ota_image_info_t* info)
 {
     int ret;
     
-    ret = sfud_read(extflash, OTA_IMAGE_ADDRESS, OTA_HEADER_SIZE, cache_buf);
+    // ret = sfud_read(extflash, OTA_IMAGE_ADDRESS, OTA_HEADER_SIZE, cache_buf);
+    ret = norflash_read(OTA_IMAGE_ADDRESS, cache_buf, OTA_HEADER_SIZE);
     if(ret != 0)
     {
         mlog_e("read ota_image partition error");
@@ -95,14 +94,16 @@ static bool image_data_check(const ota_image_info_t* info)
     {
         if(remaining >= WRITE_BLOCK)
         {
-            sfud_read(extflash, OTA_IMAGE_ADDRESS+offset+OTA_HEADER_SIZE, WRITE_BLOCK, cache_buf);
+            // sfud_read(extflash, OTA_IMAGE_ADDRESS+offset+OTA_HEADER_SIZE, WRITE_BLOCK, cache_buf);
+            norflash_read(OTA_IMAGE_ADDRESS+offset+OTA_HEADER_SIZE, cache_buf, WRITE_BLOCK);
             crc_value = crc32(crc_value, cache_buf, WRITE_BLOCK, false);
             remaining = remaining - WRITE_BLOCK;
             offset += WRITE_BLOCK;
         }
         else
         {
-            sfud_read(extflash, OTA_IMAGE_ADDRESS+offset+OTA_HEADER_SIZE, remaining, cache_buf);
+            // sfud_read(extflash, OTA_IMAGE_ADDRESS+offset+OTA_HEADER_SIZE, remaining, cache_buf);
+            norflash_read(OTA_IMAGE_ADDRESS+offset+OTA_HEADER_SIZE, cache_buf, remaining);
             crc_value = crc32(crc_value, cache_buf, remaining, true);
             offset += remaining;
             remaining = 0;
@@ -148,7 +149,8 @@ static int image_write_app(const ota_image_info_t* info)
     {
         if(remaining >= WRITE_BLOCK)
         {
-            ret = sfud_read(extflash, OTA_IMAGE_ADDRESS+offset+OTA_HEADER_SIZE, WRITE_BLOCK, cache_buf);
+            // ret = sfud_read(extflash, OTA_IMAGE_ADDRESS+offset+OTA_HEADER_SIZE, WRITE_BLOCK, cache_buf);
+            ret = norflash_read(OTA_IMAGE_ADDRESS+offset+OTA_HEADER_SIZE, cache_buf, WRITE_BLOCK);
             if(ret != 0)
             {
                 mlog_e("read ota_image partition error, 0x%x", offset+OTA_HEADER_SIZE);
@@ -172,7 +174,8 @@ static int image_write_app(const ota_image_info_t* info)
         else
         {
             #if CONFIG_OTA_IMAGE_AES128_ENCRYPT
-                ret = sfud_read(extflash, OTA_IMAGE_ADDRESS+offset+OTA_HEADER_SIZE, align_length((uint16_t)remaining,16), cache_buf);
+                // ret = sfud_read(extflash, OTA_IMAGE_ADDRESS+offset+OTA_HEADER_SIZE, align_length((uint16_t)remaining,16), cache_buf);
+                ret = norflash_read(OTA_IMAGE_ADDRESS+offset+OTA_HEADER_SIZE, cache_buf, align_length((uint16_t)remaining,16));
                 if(ret != 0)
                 {
                     mlog_e("read ota_image partition error, 0x%x", offset+OTA_HEADER_SIZE);
@@ -181,7 +184,8 @@ static int image_write_app(const ota_image_info_t* info)
                 image_decrypt_data(cache_buf, align_length((uint16_t)remaining,16), write_buf);
                 ret = ezb_flash_write(APP_ADDRESS+offset, write_buf, remaining);
             #else
-                ret = sfud_read(extflash, OTA_IMAGE_ADDRESS+offset+OTA_HEADER_SIZE, remaining, cache_buf);
+                // ret = sfud_read(extflash, OTA_IMAGE_ADDRESS+offset+OTA_HEADER_SIZE, remaining, cache_buf);
+                ret = norflash_read(OTA_IMAGE_ADDRESS+offset+OTA_HEADER_SIZE, cache_buf, remaining);
                 if(ret < 0)
                 {
                     mlog_e("read ota_image partition error, 0x%x", offset+OTA_HEADER_SIZE);
@@ -218,13 +222,14 @@ int ota_firmware_update(void)
 {
     static ota_image_info_t image_info;
 
-    sfud_init();
-    extflash = sfud_get_device_table() + 0;
-    if(extflash == NULL)
-    {
-        mlog_e("extflash device not found");
-        return OTA_FLASH_ERR;
-    }
+    // sfud_init();
+    // extflash = sfud_get_device_table() + 0;
+    // if(extflash == NULL)
+    // {
+    //     mlog_e("extflash device not found");
+    //     return OTA_FLASH_ERR;
+    // }
+    norflash_init();
 
     image_header_get(&image_info);
     mlog("\r\n");
@@ -284,7 +289,8 @@ int ota_firmware_update(void)
  */
 int ota_image_erase(void)
 {
-    int ret = sfud_erase(extflash, OTA_IMAGE_ADDRESS, OTA_IMAGE_REGION_SIZE);
+    // int ret = sfud_erase(extflash, OTA_IMAGE_ADDRESS, OTA_IMAGE_REGION_SIZE);
+    int ret = norflash_erase(OTA_IMAGE_ADDRESS, OTA_IMAGE_REGION_SIZE);
     if (ret == 0)
         return 0;
     else

@@ -313,7 +313,7 @@
           </ArmAdsMisc>
           <Cads>
             <interw>1</interw>
-            <Optim>1</Optim>
+            <Optim>2</Optim>
             <oTime>0</oTime>
             <SplitLS>0</SplitLS>
             <OneElfS>1</OneElfS>
@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>.\SRC\StdPeriphDriver\inc;.\SRC\CMSIS;.\chip;..\..\components\mlog\inc;..\..\components\boot\inc;..\..\components\ota_mgr\inc;..\..\components\sfud\inc;..\..\components\ota\inc;.\config;.\porting\mcu_header;..\..\components\crypt\inc;..\..\components\ezb_flash\inc</IncludePath>
+              <IncludePath>.\SRC\StdPeriphDriver\inc;.\SRC\CMSIS;.\chip;..\..\components\mlog\inc;..\..\components\boot\inc;..\..\components\ota_mgr\inc;..\..\components\sfud\inc;..\..\components\ota\inc;.\config;.\porting\mcu_header;..\..\components\crypt\inc;..\..\components\ezb_flash\inc;..\..\components\norflash\inc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -579,16 +579,6 @@
               <FilePath>..\..\components\ota\src\ota.c</FilePath>
             </File>
             <File>
-              <FileName>sfud.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\components\sfud\src\sfud.c</FilePath>
-            </File>
-            <File>
-              <FileName>sfud_sfdp.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\components\sfud\src\sfud_sfdp.c</FilePath>
-            </File>
-            <File>
               <FileName>boot.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\components\boot\src\boot.c</FilePath>
@@ -633,6 +623,11 @@
               <FileType>1</FileType>
               <FilePath>..\..\components\ota_mgr\src\ota_mgr_nvs.c</FilePath>
             </File>
+            <File>
+              <FileName>norflash.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\components\norflash\src\norflash.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -644,14 +639,14 @@
               <FilePath>.\porting\mlog\mlog_uart.c</FilePath>
             </File>
             <File>
-              <FileName>sfud_port.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\porting\sfud\sfud_port.c</FilePath>
-            </File>
-            <File>
               <FileName>ezb_flash.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\porting\ezb_flash\ezb_flash.c</FilePath>
+            </File>
+            <File>
+              <FileName>norflash_spi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\porting\norflash\norflash_spi.c</FilePath>
             </File>
           </Files>
         </Group>

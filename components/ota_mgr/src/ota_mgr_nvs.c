@@ -2,6 +2,7 @@
 #include <ezboot_config.h>
 #include <ota_mgr.h>
 #include <ezb_flash.h>
+#include <mlog.h>
 
 // Adler-32 算法
 uint32_t calculate_adler32(const uint8_t *data, size_t len) {
@@ -30,7 +31,11 @@ ota_mgr_state_t ota_mgr_state_get(void)
 {
     ota_mgr_data_t data;
     ezb_flash_read(OTA_MGR_DATA_ADDRESS, (uint8_t*)&data, sizeof(ota_mgr_data_t));
-    if(calculate_adler32((const uint8_t *)&data, sizeof(data)-4) == data.check_sum)
+    uint32_t adler32 = calculate_adler32((const uint8_t *)&data, sizeof(data)-4);
+    mlog_hex_d("mgr data: ", &data, sizeof(data));
+    mlog_d("adler32=0x%08x", adler32);
+    mlog_d("check_sum=0x%08x", data.check_sum);
+    if(adler32 == data.check_sum)
     {
         return data.ota_state;
     }
