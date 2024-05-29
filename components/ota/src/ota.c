@@ -219,7 +219,6 @@ int ota_firmware_update(void)
     norflash_init();
 
     image_header_get(&image_info);
-    mlog("\r\n");
     mlog_i("[head]: 0x%02x%02x%02x%02x", image_info.head[0],
 		image_info.head[1], image_info.head[2], image_info.head[3]);
     mlog_i("[header_len]: %u", image_info.header_len);
