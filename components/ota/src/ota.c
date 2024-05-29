@@ -9,7 +9,7 @@
 #include <ezboot_config.h>
 
 //AES128加密开启时，该值必须是128bits整数倍
-#define WRITE_BLOCK         4096
+#define WRITE_BLOCK         CONFIG_OTA_WRITE_BLOCK_MAX
 
 static uint8_t cache_buf[WRITE_BLOCK];
 #if CONFIG_OTA_IMAGE_AES128_ENCRYPT

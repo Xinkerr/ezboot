@@ -12,7 +12,7 @@ const static uint8_t aes_iv[16] = CONFIG_OTA_IMAGE_AES_IV;
 
 static uint8_t decrypt_key[16];
 static uint8_t decrypt_iv[16];
-static uint8_t decrypting_cache[CONFIG_DECRYPT_BLOCK_MAX+16];
+static uint8_t decrypting_cache[CONFIG_OTA_WRITE_BLOCK_MAX+16];
 
 static struct tc_aes_key_sched_struct tc_aes_sched;
 int image_decrtpy_key_init(const uint8_t* salt, uint16_t len)
