@@ -313,7 +313,7 @@
           </ArmAdsMisc>
           <Cads>
             <interw>1</interw>
-            <Optim>1</Optim>
+            <Optim>2</Optim>
             <oTime>0</oTime>
             <SplitLS>0</SplitLS>
             <OneElfS>1</OneElfS>
@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>.\SRC\StdPeriphDriver\inc;.\SRC\CMSIS;.\chip;..\..\components\mlog\inc;..\..\components\boot\inc;..\..\components\ota_mgr\inc;..\..\components\sfud\inc;..\..\components\fal\inc;.\porting\fal;..\..\components\ota\inc;.\config;.\porting\mcu_header;..\..\components\crypt\inc</IncludePath>
+              <IncludePath>.\SRC\StdPeriphDriver\inc;.\SRC\CMSIS;.\chip;..\..\components\mlog\inc;..\..\components\boot\inc;..\..\components\ota_mgr\inc;..\..\components\sfud\inc;..\..\components\ota\inc;.\config;.\porting\mcu_header;..\..\components\crypt\inc;..\..\components\ezb_flash\inc;..\..\components\norflash\inc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -564,21 +564,6 @@
           <GroupName>components</GroupName>
           <Files>
             <File>
-              <FileName>fal.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\components\fal\src\fal.c</FilePath>
-            </File>
-            <File>
-              <FileName>fal_flash.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\components\fal\src\fal_flash.c</FilePath>
-            </File>
-            <File>
-              <FileName>fal_partition.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\components\fal\src\fal_partition.c</FilePath>
-            </File>
-            <File>
               <FileName>mlog.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\components\mlog\src\mlog.c</FilePath>
@@ -594,16 +579,6 @@
               <FilePath>..\..\components\ota\src\ota.c</FilePath>
             </File>
             <File>
-              <FileName>sfud.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\components\sfud\src\sfud.c</FilePath>
-            </File>
-            <File>
-              <FileName>sfud_sfdp.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\components\sfud\src\sfud_sfdp.c</FilePath>
-            </File>
-            <File>
               <FileName>boot.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\components\boot\src\boot.c</FilePath>
@@ -612,11 +587,6 @@
               <FileName>aes_decrypt.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\components\crypt\src\aes_decrypt.c</FilePath>
-            </File>
-            <File>
-              <FileName>aes_encrypt.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\components\crypt\src\aes_encrypt.c</FilePath>
             </File>
             <File>
               <FileName>sha256.c</FileName>
@@ -638,35 +608,45 @@
               <FileType>1</FileType>
               <FilePath>..\..\components\crypt\src\cbc_mode.c</FilePath>
             </File>
+            <File>
+              <FileName>ezb_flash.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\components\ezb_flash\inc\ezb_flash.h</FilePath>
+            </File>
+            <File>
+              <FileName>aes_encrypt.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\components\crypt\src\aes_encrypt.c</FilePath>
+            </File>
+            <File>
+              <FileName>ota_mgr_nvs.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\components\ota_mgr\src\ota_mgr_nvs.c</FilePath>
+            </File>
+            <File>
+              <FileName>norflash.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\components\norflash\src\norflash.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
           <GroupName>porting</GroupName>
           <Files>
             <File>
-              <FileName>fal_flash_ch32f2_port.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\porting\fal\fal_flash_ch32f2_port.c</FilePath>
-            </File>
-            <File>
-              <FileName>fal_flash_sfud_port.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\porting\fal\fal_flash_sfud_port.c</FilePath>
-            </File>
-            <File>
               <FileName>mlog_uart.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\porting\mlog\mlog_uart.c</FilePath>
             </File>
             <File>
-              <FileName>ota_mgr_nvs.c</FileName>
+              <FileName>ezb_flash.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\porting\ota_mgr\ota_mgr_nvs.c</FilePath>
+              <FilePath>.\porting\ezb_flash\ezb_flash.c</FilePath>
             </File>
             <File>
-              <FileName>sfud_port.c</FileName>
+              <FileName>norflash_spi.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\porting\sfud\sfud_port.c</FilePath>
+              <FilePath>.\porting\norflash\norflash_spi.c</FilePath>
             </File>
           </Files>
         </Group>

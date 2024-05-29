@@ -2,20 +2,19 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <ota.h>
-#include <fal.h>
-#include <fw_partition.h>
+#include <norflash.h>
+#include <ezb_flash.h>
 #include <image_decrypt.h>
 #include <mlog.h>
 #include <ezboot_config.h>
 
 //AES128加密开启时，该值必须是128bits整数倍
-#define WRITE_BLOCK         4096
+#define WRITE_BLOCK         CONFIG_OTA_WRITE_BLOCK_MAX
 
 static uint8_t cache_buf[WRITE_BLOCK];
 #if CONFIG_OTA_IMAGE_AES128_ENCRYPT
 static uint8_t write_buf[WRITE_BLOCK];
 #endif
-
 
 /**
  * 对长度进行对齐操作。
@@ -64,16 +63,10 @@ static uint32_t crc32(uint32_t initial_value, const void *data, size_t length, b
 
 static int image_header_get(ota_image_info_t* info)
 {
-    const struct fal_partition *image_pt;
     int ret;
-    image_pt = fal_partition_find("ota_image");
-    if(image_pt == NULL)
-    {
-        mlog_e("ota_image partition not found");
-        return -1;
-    }
-    ret = fal_partition_read(image_pt, 0, cache_buf, OTA_HEADER_SIZE);
-    if(ret < 0)
+    
+    ret = norflash_read(OTA_IMAGE_ADDRESS, cache_buf, OTA_HEADER_SIZE);
+    if(ret != 0)
     {
         mlog_e("read ota_image partition error");
         return -1;
@@ -88,9 +81,6 @@ static bool image_data_check(const ota_image_info_t* info)
     uint32_t offset = 0;
     uint32_t remaining;
     uint32_t crc_value = 0xFFFFFFFF;
-    const struct fal_partition *image_pt;
-
-    image_pt = fal_partition_find("ota_image");
 
     #if CONFIG_OTA_IMAGE_AES128_ENCRYPT
         remaining = info->encrypt_len;
@@ -103,14 +93,14 @@ static bool image_data_check(const ota_image_info_t* info)
     {
         if(remaining >= WRITE_BLOCK)
         {
-            fal_partition_read(image_pt, offset+OTA_HEADER_SIZE, cache_buf, WRITE_BLOCK);
+            norflash_read(OTA_IMAGE_ADDRESS+offset+OTA_HEADER_SIZE, cache_buf, WRITE_BLOCK);
             crc_value = crc32(crc_value, cache_buf, WRITE_BLOCK, false);
             remaining = remaining - WRITE_BLOCK;
             offset += WRITE_BLOCK;
         }
         else
         {
-            fal_partition_read(image_pt, offset+OTA_HEADER_SIZE, cache_buf, remaining);
+            norflash_read(OTA_IMAGE_ADDRESS+offset+OTA_HEADER_SIZE, cache_buf, remaining);
             crc_value = crc32(crc_value, cache_buf, remaining, true);
             offset += remaining;
             remaining = 0;
@@ -133,15 +123,6 @@ static int image_write_app(const ota_image_info_t* info)
     int ret;
     uint32_t offset = 0;
     uint32_t remaining;
-    const struct fal_partition *app_pt, *image_pt;
-
-    app_pt = fal_partition_find("app");
-    image_pt = fal_partition_find("ota_image");
-    if(app_pt == NULL || image_pt == NULL)
-    {
-        mlog_e("app or ota_image partition not found");
-        return OTA_FLASH_ERR;
-    }
 
     #if CONFIG_OTA_IMAGE_AES128_ENCRYPT
         image_decrypt_init(info->key_salt, sizeof(info->key_salt), 
@@ -150,7 +131,7 @@ static int image_write_app(const ota_image_info_t* info)
 
     //擦除APP区域
     mlog("erase app...");
-    ret = fal_partition_erase_all(app_pt);
+    ret = ezb_flash_erase(APP_ADDRESS, APP_REGION_SIZE);
     if(ret < 0)
     {
         mlog("....FAIL\r\n");
@@ -165,17 +146,17 @@ static int image_write_app(const ota_image_info_t* info)
     {
         if(remaining >= WRITE_BLOCK)
         {
-            ret = fal_partition_read(image_pt, offset+OTA_HEADER_SIZE, cache_buf, WRITE_BLOCK);
-            if(ret < 0)
+            ret = norflash_read(OTA_IMAGE_ADDRESS+offset+OTA_HEADER_SIZE, cache_buf, WRITE_BLOCK);
+            if(ret != 0)
             {
                 mlog_e("read ota_image partition error, 0x%x", offset+OTA_HEADER_SIZE);
                 return OTA_FLASH_ERR;
             }
             #if CONFIG_OTA_IMAGE_AES128_ENCRYPT
                 image_decrypt_data(cache_buf, WRITE_BLOCK, write_buf);
-                ret = fal_partition_write(app_pt, offset, write_buf, WRITE_BLOCK);
+                ret = ezb_flash_write(APP_ADDRESS+offset, write_buf, WRITE_BLOCK);
             #else
-                ret = fal_partition_write(app_pt, offset, cache_buf, WRITE_BLOCK);
+                ret = ezb_flash_write(APP_ADDRESS+offset, cache_buf, WRITE_BLOCK);
             #endif
             if(ret < 0)
             {
@@ -189,22 +170,22 @@ static int image_write_app(const ota_image_info_t* info)
         else
         {
             #if CONFIG_OTA_IMAGE_AES128_ENCRYPT
-                ret = fal_partition_read(image_pt, offset+OTA_HEADER_SIZE, cache_buf, align_length((uint16_t)remaining,16));
-                if(ret < 0)
+                ret = norflash_read(OTA_IMAGE_ADDRESS+offset+OTA_HEADER_SIZE, cache_buf, align_length((uint16_t)remaining,16));
+                if(ret != 0)
                 {
                     mlog_e("read ota_image partition error, 0x%x", offset+OTA_HEADER_SIZE);
                     return OTA_FLASH_ERR;
                 }
                 image_decrypt_data(cache_buf, align_length((uint16_t)remaining,16), write_buf);
-                ret = fal_partition_write(app_pt, offset, write_buf, remaining);
+                ret = ezb_flash_write(APP_ADDRESS+offset, write_buf, remaining);
             #else
-                ret = fal_partition_read(image_pt, offset+OTA_HEADER_SIZE, cache_buf, remaining);
+                ret = norflash_read(OTA_IMAGE_ADDRESS+offset+OTA_HEADER_SIZE, cache_buf, remaining);
                 if(ret < 0)
                 {
                     mlog_e("read ota_image partition error, 0x%x", offset+OTA_HEADER_SIZE);
                     return OTA_FLASH_ERR;
                 }
-                ret = fal_partition_write(app_pt, offset, cache_buf, remaining);
+                ret = ezb_flash_write(APP_ADDRESS+offset, cache_buf, remaining);
             #endif
             if(ret < 0)
             {
@@ -235,11 +216,11 @@ int ota_firmware_update(void)
 {
     static ota_image_info_t image_info;
 
-    fal_init();
+    norflash_init();
 
     image_header_get(&image_info);
-    mlog("\r\n");
-    mlog_i("[head]: 0x%08x", image_info.head);
+    mlog_i("[head]: 0x%02x%02x%02x%02x", image_info.head[0],
+		image_info.head[1], image_info.head[2], image_info.head[3]);
     mlog_i("[header_len]: %u", image_info.header_len);
     mlog_i("[data_version]: 0x%08x", image_info.data_version);
     mlog_i("[image_size]: %u", image_info.image_size);
@@ -291,9 +272,13 @@ int ota_firmware_update(void)
  * 
  * 这个函数用于擦除设备上的OTA图像分区。它通过查找名为"ota_image"的分区，并擦除该分区的所有内容。
  * 
- * @return 返回擦除操作的结果状态码。成功>=0，失败返回错误码。
+ * @return 返回擦除操作的结果状态码。成功=0，失败返回错误码。
  */
 int ota_image_erase(void)
 {
-    return fal_partition_erase_all(fal_partition_find("ota_image"));
+    int ret = norflash_erase(OTA_IMAGE_ADDRESS, OTA_IMAGE_REGION_SIZE);
+    if (ret == 0)
+        return 0;
+    else
+        return -1;
 }

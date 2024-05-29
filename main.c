@@ -21,7 +21,7 @@ int main( void )
 	mlog("Build: %s\r\n", __DATE__);
 
 	ota_mgr_state_t state = ota_mgr_state_get();
-	mlog_d("ota state:%d", state);
+	mlog_i("ota state:%d", state);
 
 	if(state == OTA_REQUEST)
 	{
