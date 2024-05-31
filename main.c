@@ -4,6 +4,9 @@
 #include <mlog.h>
 #include <ota.h>
 #include <ota_mgr.h>
+#if OTA_MGR_EXTERN_FLASH | OTA_IMAGE_EXTERN_FLASH
+#include  <norflash.h>
+#endif
 
 
 int main( void )
@@ -19,6 +22,10 @@ int main( void )
 	mlog("|______/_____|____/ \\____/ \\____/  |_|   \r\n");
 	mlog("Version: 0.1\r\n");
 	mlog("Build: %s\r\n", __DATE__);
+	
+	#if OTA_MGR_EXTERN_FLASH | OTA_IMAGE_EXTERN_FLASH
+	norflash_init();
+	#endif
 
 	ota_mgr_state_t state = ota_mgr_state_get();
 	mlog_i("ota state:%d", state);

@@ -216,8 +216,6 @@ int ota_firmware_update(void)
 {
     static ota_image_info_t image_info;
 
-    norflash_init();
-
     image_header_get(&image_info);
     mlog_i("[head]: 0x%02x%02x%02x%02x", image_info.head[0],
 		image_info.head[1], image_info.head[2], image_info.head[3]);
