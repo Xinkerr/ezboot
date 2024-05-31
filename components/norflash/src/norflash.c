@@ -1,6 +1,5 @@
 #include <norflash_spi.h>
 #include <norflash.h>
-#include <mlog.h>
 
 #define CMD_PAGE_PROGRAM                            0x02
 #define CMD_READ_DATA                               0x03
@@ -25,6 +24,15 @@
 #define PAGE_SIZE                                   CONFIG_NORFLASH_PAGE_SIZE
 #else
 #define PAGE_SIZE                                   256
+#endif
+
+#ifdef CONFIG_LOG_LEVEL
+#include #include <mlog.h>
+#define nf_log_hex_i    mlog_hex_i
+#define nf_log_i        mlog_i
+#else
+#define nf_log_hex_i(...)
+#define nf_log_i(...)
 #endif
 
 static void norflash_write_enable(void)   
@@ -94,7 +102,7 @@ int norflash_init(void)
         return -2;
     
     // 记录NOR闪存设备ID的日志，以16进制输出
-    mlog_hex_i("norflash ID: ", &norflash_id, sizeof(norflash_id));
+    nf_log_hex_i("norflash ID: ", &norflash_id, sizeof(norflash_id));
     
     return 0; // 初始化成功
 }
