@@ -1,6 +1,5 @@
 #include <norflash_spi.h>
 #include <ch32f20x.h>
-#include <mlog.h>
 
 static void gpio_configuration(void) 
 {
