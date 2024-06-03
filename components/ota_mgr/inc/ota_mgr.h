@@ -11,7 +11,8 @@ typedef enum
     OTA_FW_ILLEGAL,             //固件数据非法
     OTA_MRG_DATA_ERR,           //MGR数据错误
     OTA_IMAGE_CHECKSUM_ERR,     //固件校验错误
-    OTA_STA_WR_ERROR            //读写错误
+    OTA_STA_WR_ERROR,           //读写错误
+    OTA_ENCRYPT_DATA_OVERFLOW,  //加密数据长度溢出
 }ota_mgr_state_t;
 
 typedef struct 
