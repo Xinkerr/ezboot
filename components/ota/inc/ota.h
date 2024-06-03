@@ -9,6 +9,7 @@
 #define OTA_FLASH_ERR               -1
 #define OTA_IMAGE_CHECK_ERR         -2
 #define OTA_IMAGE_SIZE_ERR          -3
+#define OTA_IMAGE_ENCRYPT_OVERFLOW  -4
 
 typedef struct
 {

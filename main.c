@@ -51,6 +51,10 @@ int main( void )
 		case OTA_IMAGE_SIZE_ERR:
 			ota_mgr_state_set(OTA_FW_OVER_SIZE);
 			break;
+
+		case OTA_IMAGE_ENCRYPT_OVERFLOW:
+			ota_mgr_state_set(OTA_ENCRYPT_DATA_OVERFLOW);
+			break;
 		
 		default:
 			break;

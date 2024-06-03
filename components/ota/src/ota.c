@@ -49,7 +49,7 @@ static inline int _ota_image_read(uint32_t addr, uint8_t *pdata, uint32_t size)
  * @param align_to 对齐的目标大小，即要求的对齐边界。
  * @return 对齐后的长度。该长度要么与原始长度相同（如果原始长度已经满足对齐要求），要么是满足对齐要求的下一个较大长度。
  */
-uint16_t align_length(uint16_t length, uint16_t align_to) {
+uint32_t align_length(uint32_t length, uint32_t align_to) {
     // 检查原始长度是否已经满足对齐要求
     if (length % align_to == 0) {
         return length;
@@ -193,13 +193,13 @@ static int image_write_app(const ota_image_info_t* info)
         else
         {
             #if CONFIG_OTA_IMAGE_AES128_ENCRYPT
-                ret = _ota_image_read(OTA_IMAGE_ADDRESS+offset+OTA_HEADER_SIZE, cache_buf, align_length((uint16_t)remaining,16));
+                ret = _ota_image_read(OTA_IMAGE_ADDRESS+offset+OTA_HEADER_SIZE, cache_buf, align_length(remaining,16));
                 if(ret != 0)
                 {
                     mlog_e("read ota_image partition error, 0x%x", offset+OTA_HEADER_SIZE);
                     return OTA_FLASH_ERR;
                 }
-                image_decrypt_data(cache_buf, align_length((uint16_t)remaining,16), write_buf);
+                image_decrypt_data(cache_buf, align_length(remaining,16), write_buf);
                 ret = ezb_flash_write(APP_ADDRESS+offset, write_buf, remaining);
             #else
                 ret = _ota_image_read(OTA_IMAGE_ADDRESS+offset+OTA_HEADER_SIZE, cache_buf, remaining);
@@ -273,6 +273,19 @@ int ota_firmware_update(void)
         mlog("...FAIL\r\n");
         return OTA_IMAGE_SIZE_ERR;
     }
+
+    #if CONFIG_OTA_IMAGE_AES128_ENCRYPT
+    mlog("checking encrypt len...");
+    if(image_info.encrypt_len <= OTA_IMAGE_REGION_SIZE)
+    {
+        mlog("...OK\r\n");
+    }
+    else
+    {
+        mlog("...FAIL\r\n");
+        return OTA_IMAGE_ENCRYPT_OVERFLOW;
+    }
+    #endif
 
     mlog("checking data...");
     if(image_data_check(&image_info))
