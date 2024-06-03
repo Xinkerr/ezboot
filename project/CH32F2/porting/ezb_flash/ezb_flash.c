@@ -30,7 +30,7 @@ int ezb_flash_erase(uint32_t addr, uint32_t size)
     }
     FLASH_Lock();
 
-    return erased_size;
+    return 0;
 }
 
 int ezb_flash_write(uint32_t addr, uint8_t *pdata, uint32_t size)
@@ -60,7 +60,7 @@ int ezb_flash_write(uint32_t addr, uint8_t *pdata, uint32_t size)
     }
     FLASH_Lock();
 
-    return size;
+    return 0;
 }
 
 int ezb_flash_read(uint32_t addr, uint8_t *pdata, uint32_t size)
@@ -70,5 +70,5 @@ int ezb_flash_read(uint32_t addr, uint8_t *pdata, uint32_t size)
     {
         *pdata = *(uint8_t *) addr;
     }
-    return size;
+    return 0;
 }

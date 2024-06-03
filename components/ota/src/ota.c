@@ -2,7 +2,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <ota.h>
-#include <norflash.h>
 #include <ezb_flash.h>
 #include <image_decrypt.h>
 #include <mlog.h>
@@ -14,6 +13,30 @@
 static uint8_t cache_buf[WRITE_BLOCK];
 #if CONFIG_OTA_IMAGE_AES128_ENCRYPT
 static uint8_t write_buf[WRITE_BLOCK];
+#endif
+
+#if OTA_IMAGE_EXTERN_FLASH
+#include <norflash.h>
+static inline int _ota_image_erase(uint32_t addr, uint32_t size)
+{
+    return norflash_erase(addr, size);
+}
+
+static inline int _ota_image_read(uint32_t addr, uint8_t *pdata, uint32_t size)
+{
+    return norflash_read(addr, pdata, size);
+}
+
+#else
+static inline int _ota_image_erase(uint32_t addr, uint32_t size)
+{
+    return ezb_flash_erase(addr, size);
+}
+
+static inline int _ota_image_read(uint32_t addr, uint8_t *pdata, uint32_t size)
+{
+    return ezb_flash_read(addr, pdata, size);
+}
 #endif
 
 /**
@@ -65,7 +88,7 @@ static int image_header_get(ota_image_info_t* info)
 {
     int ret;
     
-    ret = norflash_read(OTA_IMAGE_ADDRESS, cache_buf, OTA_HEADER_SIZE);
+    ret = _ota_image_read(OTA_IMAGE_ADDRESS, cache_buf, OTA_HEADER_SIZE);
     if(ret != 0)
     {
         mlog_e("read ota_image partition error");
@@ -93,14 +116,14 @@ static bool image_data_check(const ota_image_info_t* info)
     {
         if(remaining >= WRITE_BLOCK)
         {
-            norflash_read(OTA_IMAGE_ADDRESS+offset+OTA_HEADER_SIZE, cache_buf, WRITE_BLOCK);
+            _ota_image_read(OTA_IMAGE_ADDRESS+offset+OTA_HEADER_SIZE, cache_buf, WRITE_BLOCK);
             crc_value = crc32(crc_value, cache_buf, WRITE_BLOCK, false);
             remaining = remaining - WRITE_BLOCK;
             offset += WRITE_BLOCK;
         }
         else
         {
-            norflash_read(OTA_IMAGE_ADDRESS+offset+OTA_HEADER_SIZE, cache_buf, remaining);
+            _ota_image_read(OTA_IMAGE_ADDRESS+offset+OTA_HEADER_SIZE, cache_buf, remaining);
             crc_value = crc32(crc_value, cache_buf, remaining, true);
             offset += remaining;
             remaining = 0;
@@ -146,7 +169,7 @@ static int image_write_app(const ota_image_info_t* info)
     {
         if(remaining >= WRITE_BLOCK)
         {
-            ret = norflash_read(OTA_IMAGE_ADDRESS+offset+OTA_HEADER_SIZE, cache_buf, WRITE_BLOCK);
+            ret = _ota_image_read(OTA_IMAGE_ADDRESS+offset+OTA_HEADER_SIZE, cache_buf, WRITE_BLOCK);
             if(ret != 0)
             {
                 mlog_e("read ota_image partition error, 0x%x", offset+OTA_HEADER_SIZE);
@@ -170,7 +193,7 @@ static int image_write_app(const ota_image_info_t* info)
         else
         {
             #if CONFIG_OTA_IMAGE_AES128_ENCRYPT
-                ret = norflash_read(OTA_IMAGE_ADDRESS+offset+OTA_HEADER_SIZE, cache_buf, align_length((uint16_t)remaining,16));
+                ret = _ota_image_read(OTA_IMAGE_ADDRESS+offset+OTA_HEADER_SIZE, cache_buf, align_length((uint16_t)remaining,16));
                 if(ret != 0)
                 {
                     mlog_e("read ota_image partition error, 0x%x", offset+OTA_HEADER_SIZE);
@@ -179,7 +202,7 @@ static int image_write_app(const ota_image_info_t* info)
                 image_decrypt_data(cache_buf, align_length((uint16_t)remaining,16), write_buf);
                 ret = ezb_flash_write(APP_ADDRESS+offset, write_buf, remaining);
             #else
-                ret = norflash_read(OTA_IMAGE_ADDRESS+offset+OTA_HEADER_SIZE, cache_buf, remaining);
+                ret = _ota_image_read(OTA_IMAGE_ADDRESS+offset+OTA_HEADER_SIZE, cache_buf, remaining);
                 if(ret < 0)
                 {
                     mlog_e("read ota_image partition error, 0x%x", offset+OTA_HEADER_SIZE);
@@ -274,7 +297,7 @@ int ota_firmware_update(void)
  */
 int ota_image_erase(void)
 {
-    int ret = norflash_erase(OTA_IMAGE_ADDRESS, OTA_IMAGE_REGION_SIZE);
+    int ret = _ota_image_erase(OTA_IMAGE_ADDRESS, OTA_IMAGE_REGION_SIZE);
     if (ret == 0)
         return 0;
     else
