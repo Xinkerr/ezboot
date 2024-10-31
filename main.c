@@ -8,9 +8,16 @@
 #include  <norflash.h>
 #endif
 
+int __weak system_init(void)
+{
+	return 0;
+}
+
 
 int main( void )
 {
+	system_init();
+
     mlog_init();
 	
 	mlog("\r\n");
