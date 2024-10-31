@@ -99,7 +99,12 @@ int norflash_init(void)
     // 读取NOR闪存的设备ID
     norflash_id = norflash_read_ID();
     if(norflash_id == 0)
+	{
+		#ifdef CONFIG_LOG_LEVEL
+		mlog_hex_e("read norflash ID error ");
+		#endif
         return -2;
+	}
     
     // 记录NOR闪存设备ID的日志，以16进制输出
     nf_log_hex_i("norflash ID: ", &norflash_id, sizeof(norflash_id));
