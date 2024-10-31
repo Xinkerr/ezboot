@@ -1,0 +1,7 @@
+.vscode
+DebugConfig
+ezboot
+list
+JLinkLog.txt
+**/*.uvguix.*
+*.uvguix.*
