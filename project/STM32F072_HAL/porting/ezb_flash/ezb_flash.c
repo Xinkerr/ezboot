@@ -3,7 +3,6 @@
 #include <mcu_header.h>
 #include <mlog.h>
 
-#define FLASH_SECTOR_SIZE       4096
 #define WORD_ALIGNMENT          4
 
 int ezb_flash_erase(uint32_t addr, uint32_t size) {
