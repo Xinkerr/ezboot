@@ -1,3 +1,4 @@
+#include <ezboot_config.h>
 #include <norflash_spi.h>
 #include <norflash.h>
 
@@ -27,12 +28,14 @@
 #endif
 
 #ifdef CONFIG_LOG_LEVEL
-#include #include <mlog.h>
+#include <mlog.h>
 #define nf_log_hex_i    mlog_hex_i
 #define nf_log_i        mlog_i
+#define nf_log_e		mlog_e
 #else
 #define nf_log_hex_i(...)
 #define nf_log_i(...)
+#define nf_log_e(...)
 #endif
 
 static void norflash_write_enable(void)   
@@ -94,15 +97,16 @@ int norflash_init(void)
     // 初始化SPI总线以用于NOR闪存通信
     ret = norflash_spi_init();
     if(ret != 0)
+	{
+		nf_log_e("spi init failed");
         return -1;
+	}
     
     // 读取NOR闪存的设备ID
     norflash_id = norflash_read_ID();
     if(norflash_id == 0)
 	{
-		#ifdef CONFIG_LOG_LEVEL
-		mlog_hex_e("read norflash ID error ");
-		#endif
+		nf_log_e("read norflash ID error ");
         return -2;
 	}
     
