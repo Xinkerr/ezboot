@@ -645,6 +645,11 @@
               <FileType>1</FileType>
               <FilePath>..\porting\norflash\norflash_spi.c</FilePath>
             </File>
+            <File>
+              <FileName>ezboot_config.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\config\ezboot_config.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
