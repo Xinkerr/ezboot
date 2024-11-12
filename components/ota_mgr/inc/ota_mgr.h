@@ -25,4 +25,8 @@ int ota_mgr_state_set(ota_mgr_state_t state);
 
 ota_mgr_state_t ota_mgr_state_get(void);
 
+#if CONFIG_TEST
+int ota_mgr_test(void);
+#endif
+
 #endif

@@ -1,6 +1,7 @@
 #ifndef __NORFLASH_H__
 #define __NORFLASH_H__
 #include <stdint.h>
+#include <ezboot_config.h>
 
 /**
  * @brief 初始化NORFLASH设备
@@ -43,5 +44,9 @@ int norflash_read(uint32_t addr, void* buf, uint32_t size);
  * @return int 0，表示成功。
  */
 int norflash_write(uint32_t addr, const void* buf, uint32_t size);
+
+#if CONFIG_TEST
+int norflash_test(void);
+#endif
 
 #endif

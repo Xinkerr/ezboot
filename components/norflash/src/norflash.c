@@ -1,3 +1,4 @@
+#include <string.h>
 #include <ezboot_config.h>
 #include <norflash_spi.h>
 #include <norflash.h>
@@ -128,12 +129,10 @@ int norflash_erase(uint32_t addr, uint32_t size)
     uint32_t i;
     uint32_t erase_addr;
     erase_addr = addr;
-    
     /* 启用flash写操作 */
-    norflash_write_enable();                   
+    norflash_write_enable();                
     /* 等待flash准备就绪 */
     norflash_wait_busy();   
-
     /* 选中SPI Flash设备 */
     norflash_spi_cs(true);                         
     /* 遍历需要擦除的区域 */
@@ -247,3 +246,39 @@ int norflash_write(uint32_t addr, const void* buf, uint32_t size)
     return 0; // 表示成功。
 }
 
+#if CONFIG_TEST
+int norflash_test(void)
+{
+    int ret = 0;
+    mlog("[TEST]: norflash checking ......");
+    uint8_t read_buf[8];
+    const uint8_t test_buf[8] = {0x11,0x22,0x33,0x44,0x55,0x66,0x77,0x88};
+
+    uint32_t addr = 0;
+    memset(read_buf, 0, sizeof(read_buf));
+    norflash_erase(addr, ERASE_SIZE);
+    norflash_write(addr, test_buf, sizeof(test_buf));
+    norflash_read(addr, read_buf, sizeof(read_buf));
+    if(memcmp(test_buf, read_buf, sizeof(test_buf)) != 0)
+    {
+        ret = -1;
+        goto error;
+    }
+    
+    memset(read_buf, 0, sizeof(read_buf));
+    norflash_erase(addr, ERASE_SIZE);
+    norflash_read(addr, read_buf, sizeof(read_buf));
+    if(memcmp(test_buf, read_buf, sizeof(test_buf)) == 0)
+    {
+        ret = -2;
+        goto error;
+    }
+
+    mlog("OK\r\n");
+    return ret;
+
+    error:
+        mlog("FAIL %d\r\n", ret);
+        return ret;
+}
+#endif

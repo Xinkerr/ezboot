@@ -47,4 +47,8 @@ int ota_firmware_update(void);
  */
 int ota_image_erase(void);
 
+#if CONFIG_TEST
+int ota_flash_test(void);
+#endif
+
 #endif

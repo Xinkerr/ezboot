@@ -316,3 +316,39 @@ int ota_image_erase(void)
     else
         return -1;
 }
+
+#if CONFIG_TEST
+int ota_flash_test(void)
+{
+    int ret = 0;
+    mlog("[TEST]: ezb_flash checking ......");
+    uint8_t read_buf[8];
+    const uint8_t test_buf[8] = {0x11,0x22,0x33,0x44,0x55,0x66,0x77,0x88};
+
+    memset(read_buf, 0, sizeof(read_buf));
+    ezb_flash_erase(APP_ADDRESS, APP_REGION_SIZE);
+    ezb_flash_write(APP_ADDRESS, test_buf, sizeof(test_buf));
+    ezb_flash_read(APP_ADDRESS, read_buf, sizeof(read_buf));
+    if(memcmp(test_buf, read_buf, sizeof(test_buf)) != 0)
+    {
+        ret = -1;
+        goto error;
+    }
+
+    memset(read_buf, 0, sizeof(read_buf));
+    ezb_flash_erase(APP_ADDRESS, APP_REGION_SIZE);
+    ezb_flash_read(APP_ADDRESS, read_buf, sizeof(read_buf));
+    if(memcmp(test_buf, read_buf, sizeof(test_buf)) == 0)
+    {
+        ret = -2;
+        goto error;
+    }
+
+    mlog("OK\r\n");
+    return ret;
+
+    error:
+        mlog("FAIL %d\r\n", ret);
+        return ret;
+}
+#endif

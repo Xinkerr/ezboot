@@ -34,6 +34,14 @@ int main( void )
 	norflash_init();
 	#endif
 
+	#if CONFIG_TEST
+		#if OTA_MGR_EXTERN_FLASH | OTA_IMAGE_EXTERN_FLASH
+		norflash_test();
+		#endif
+		ota_mgr_test();
+		ota_flash_test();
+	#endif
+
 	ota_mgr_state_t state = ota_mgr_state_get();
 	mlog_i("ota state:%d", state);
 

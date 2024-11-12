@@ -18,7 +18,7 @@ static inline int ota_mgr_erase(uint32_t addr, uint32_t size)
     return norflash_erase(addr, size);
 }
 
-static inline int ota_mgr_write(uint32_t addr, uint8_t *pdata, uint32_t size)
+static inline int ota_mgr_write(uint32_t addr, const uint8_t *pdata, uint32_t size)
 {
     return norflash_write(addr, pdata, size);
 }
@@ -35,7 +35,7 @@ static inline int ota_mgr_erase(uint32_t addr, uint32_t size)
     return ezb_flash_erase(addr, size);
 }
 
-static inline int ota_mgr_write(uint32_t addr, uint8_t *pdata, uint32_t size)
+static inline int ota_mgr_write(uint32_t addr, const uint8_t *pdata, uint32_t size)
 {
     return ezb_flash_write(addr, pdata, size);
 }
@@ -86,3 +86,39 @@ ota_mgr_state_t ota_mgr_state_get(void)
         return OTA_MRG_DATA_ERR;
     }
 }
+
+#if CONFIG_TEST
+int ota_mgr_test(void)
+{
+    int ret = 0;
+    mlog("[TEST]: ota_mgr checking ......");
+    uint8_t read_buf[8];
+    const uint8_t test_buf[8] = {0x11,0x22,0x33,0x44,0x55,0x66,0x77,0x88};
+
+    memset(read_buf, 0, sizeof(read_buf));
+    ota_mgr_erase(OTA_MGR_DATA_ADDRESS, OTA_MGR_REGION_SIZE);
+    ota_mgr_write(OTA_MGR_DATA_ADDRESS, test_buf, sizeof(test_buf));
+    ota_mgr_read(OTA_MGR_DATA_ADDRESS, read_buf, sizeof(test_buf));
+    if(memcmp(test_buf, read_buf, sizeof(test_buf)) != 0)
+    {
+        ret = -1;
+        goto error;
+    }
+
+    memset(read_buf, 0, sizeof(read_buf));
+    ota_mgr_erase(OTA_MGR_DATA_ADDRESS, OTA_MGR_REGION_SIZE);
+    ota_mgr_read(OTA_MGR_DATA_ADDRESS, read_buf, sizeof(test_buf));
+    if(memcmp(test_buf, read_buf, sizeof(test_buf)) == 0)
+    {
+        ret = -2;
+        goto error;
+    }
+
+    mlog("OK\r\n");
+    return ret;
+
+    error:
+        mlog("FAIL %d\r\n", ret);
+        return ret;
+}
+#endif
