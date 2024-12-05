@@ -50,12 +50,15 @@ extern "C" {
 /* USER CODE END EM */
 
 /* Exported functions prototypes ---------------------------------------------*/
+void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
 
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define FLASH_CS_Pin GPIO_PIN_12
+#define FLASH_CS_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 

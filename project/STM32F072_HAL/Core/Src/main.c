@@ -63,7 +63,7 @@ void SystemClock_Config(void);
   * @brief  The application entry point.
   * @retval int
   */
-int system_init(void)
+int main(void)
 {
 
   /* USER CODE BEGIN 1 */
@@ -94,7 +94,15 @@ int system_init(void)
 
   /* USER CODE END 2 */
 
-  return 0;
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
+  while (1)
+  {
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
+  }
+  /* USER CODE END 3 */
 }
 
 /**
