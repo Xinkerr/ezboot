@@ -25,16 +25,23 @@
 #include  <norflash.h>
 #endif
 
+
+#if defined(USE_HAL_DRIVER) && defined(__ARMCC_VERSION)
+int $Sub$$main(void)
+{
+	extern int $Super$$main(void);
+	$Super$$main();
+#else
 int __weak system_init(void)
 {
 	return 0;
 }
 
+int main(void)
 
-int main( void )
 {
 	system_init();
-
+#endif
     mlog_init();
 	
 	mlog("\r\n");
@@ -95,5 +102,6 @@ int main( void )
 	
 	mlog( "__________________________________________\r\n" );
 	app_enter();
+	return 0;
 }
 
