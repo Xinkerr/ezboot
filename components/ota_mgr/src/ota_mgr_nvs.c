@@ -19,7 +19,7 @@
 #include <ezboot_config.h>
 #include <ota_mgr.h>
 
-#ifdef CONFIG_LOG_LEVEL
+#if CONFIG_LOG_LEVEL
 #include <mlog.h>
 #define otamgr_log_hex_d    mlog_hex_d
 #define otamgr_log_d        mlog_d

@@ -18,7 +18,6 @@
 #include <ezb_flash.h>
 #include <string.h>
 #include <mcu_header.h>
-#include <mlog.h>
 
 #define WORD_ALIGNMENT          4
 

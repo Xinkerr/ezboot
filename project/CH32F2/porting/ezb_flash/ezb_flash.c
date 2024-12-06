@@ -18,7 +18,6 @@
 #include <ezb_flash.h>
 #include <string.h>
 #include "ch32f20x.h"
-#include <mlog.h>
 
 #define FLASH_SECTOR_SIZE       4096
 #define WORD_ALIGNMENT          4
@@ -37,7 +36,6 @@ int ezb_flash_erase(uint32_t addr, uint32_t size)
         flash_status = FLASH_ErasePage(addr);
         if (flash_status != FLASH_COMPLETE)
         {
-            mlog_e("FLASH_ErasePage err: %d\r\n", flash_status);
             FLASH_Lock();
             return -1;
         }

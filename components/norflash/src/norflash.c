@@ -45,7 +45,7 @@
 #define PAGE_SIZE                                   256
 #endif
 
-#ifdef CONFIG_LOG_LEVEL
+#if CONFIG_LOG_LEVEL
 #include <mlog.h>
 #define nf_log_hex_i    mlog_hex_i
 #define nf_log_i        mlog_i
