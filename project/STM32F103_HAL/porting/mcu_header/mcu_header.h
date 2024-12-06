@@ -18,6 +18,8 @@
 #ifndef __MCU_HEADER_H__
 #define __MCU_HEADER_H__
 
-#include "stm32f1xx_hal.h"
+#include <main.h>
+#include <usart.h>
+#include <spi.h>
 
 #endif

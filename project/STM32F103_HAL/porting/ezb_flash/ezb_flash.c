@@ -22,8 +22,7 @@
 
 #define WORD_ALIGNMENT          4
 
-int ezb_flash_erase(uint32_t addr, uint32_t size) 
-{
+int ezb_flash_erase(uint32_t addr, uint32_t size) {
     FLASH_EraseInitTypeDef eraseInitStruct;
     uint32_t pageError = 0;
     uint32_t numberOfPages;
@@ -57,8 +56,7 @@ int ezb_flash_erase(uint32_t addr, uint32_t size)
     return 0; // 返回成功
 }
 
-int ezb_flash_write(uint32_t addr, const uint8_t *pdata, uint32_t size) 
-{
+int ezb_flash_write(uint32_t addr, const uint8_t *pdata, uint32_t size) {
     uint32_t write_data;
     uint32_t read_data;
 
