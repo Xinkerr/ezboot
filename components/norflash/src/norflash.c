@@ -134,6 +134,28 @@ int norflash_init(void)
     return 0; // 初始化成功
 }
 
+static inline int norflash_sector_erase(uint32_t addr)
+{
+    /* 启用flash写操作 */
+    norflash_write_enable();                
+    /* 等待flash准备就绪 */
+    norflash_wait_busy();   
+    /* 选中SPI Flash设备 */
+    norflash_spi_cs(true);                         
+    /* 发送扇区擦除指令 */
+    norflash_spi_transfer(CMD_SECTOR_ERASE);       
+    norflash_spi_transfer((uint8_t)((addr)>>16));  
+    norflash_spi_transfer((uint8_t)((addr)>>8));   
+    norflash_spi_transfer((uint8_t)addr);  
+    /* 取消SPI Flash设备选中 */
+    norflash_spi_cs(false);                  	      
+    /* 等待擦除操作完成 */
+    norflash_wait_busy();   				   		   	
+    /* 禁用flash写操作 */
+    norflash_write_disable();
+    return 0;
+}
+
 /**
  * @brief 擦除NORFLASH指定区域
  * 
@@ -144,30 +166,15 @@ int norflash_init(void)
 int norflash_erase(uint32_t addr, uint32_t size)
 {
     uint32_t i;
-    uint32_t erase_addr;
-    erase_addr = addr;
-    /* 启用flash写操作 */
-    norflash_write_enable();                
-    /* 等待flash准备就绪 */
-    norflash_wait_busy();   
-    /* 选中SPI Flash设备 */
-    norflash_spi_cs(true);                         
+    uint32_t erase_addr = addr;
+                       
     /* 遍历需要擦除的区域 */
     for(i=0; i<size; i+=ERASE_SIZE)
     {
-        addr += i;
-        /* 发送扇区擦除指令 */
-        norflash_spi_transfer(CMD_SECTOR_ERASE);       
-        norflash_spi_transfer((uint8_t)((erase_addr)>>16));  
-        norflash_spi_transfer((uint8_t)((erase_addr)>>8));   
-        norflash_spi_transfer((uint8_t)erase_addr);  
+        /* 扇区擦除 */
+        norflash_sector_erase(erase_addr);
+        erase_addr += ERASE_SIZE;
     }
-    /* 取消SPI Flash设备选中 */
-    norflash_spi_cs(false);                  	      
-    /* 等待擦除操作完成 */
-    norflash_wait_busy();   				   		   	
-    /* 禁用flash写操作 */
-    norflash_write_disable();
     return 0;
 }
 
@@ -264,31 +271,46 @@ int norflash_write(uint32_t addr, const void* buf, uint32_t size)
 }
 
 #if CONFIG_TEST
+const uint8_t test_buf[8] = {0x11,0x22,0x33,0x44,0x55,0x66,0x77,0x88};
 int norflash_test(void)
 {
     int ret = 0;
     mlog("[TEST]: norflash checking ......");
     uint8_t read_buf[8];
-    const uint8_t test_buf[8] = {0x11,0x22,0x33,0x44,0x55,0x66,0x77,0x88};
-
-    uint32_t addr = 0;
-    memset(read_buf, 0, sizeof(read_buf));
-    norflash_erase(addr, ERASE_SIZE);
-    norflash_write(addr, test_buf, sizeof(test_buf));
-    norflash_read(addr, read_buf, sizeof(read_buf));
-    if(memcmp(test_buf, read_buf, sizeof(test_buf)) != 0)
-    {
-        ret = -1;
-        goto error;
-    }
+    uint32_t addr = OTA_IMAGE_ADDRESS;
+    uint32_t offset = 0;
     
-    memset(read_buf, 0, sizeof(read_buf));
-    norflash_erase(addr, ERASE_SIZE);
-    norflash_read(addr, read_buf, sizeof(read_buf));
-    if(memcmp(test_buf, read_buf, sizeof(test_buf)) == 0)
+    norflash_erase(addr, OTA_IMAGE_REGION_SIZE);
+    while(offset < OTA_IMAGE_REGION_SIZE)
     {
-        ret = -2;
-        goto error;
+        norflash_write(addr, test_buf, sizeof(test_buf));
+        memset(read_buf, 0, sizeof(read_buf));
+        norflash_read(addr, read_buf, sizeof(read_buf));
+        mlog_d("addr:%d", addr);
+        mlog_hex_d("Read:", read_buf, sizeof(read_buf));
+        if(memcmp(test_buf, read_buf, sizeof(test_buf)) != 0)
+        {
+            ret = -1;
+            goto error;
+        }
+        offset += sizeof(test_buf);
+        addr += sizeof(test_buf);
+    }
+    addr = OTA_IMAGE_ADDRESS;
+    offset = 0;
+    norflash_erase(addr, OTA_IMAGE_REGION_SIZE);
+    while(offset <OTA_IMAGE_REGION_SIZE)
+    {
+        norflash_read(addr, read_buf, sizeof(read_buf));
+        mlog_d("addr:%d", addr);
+        mlog_hex_d("Read:", read_buf, sizeof(read_buf));
+        if(memcmp(test_buf, read_buf, sizeof(test_buf)) == 0)
+        {
+            ret = -2;
+            goto error;
+        }
+        offset += sizeof(test_buf);
+        addr += sizeof(test_buf);
     }
 
     mlog("OK\r\n");
