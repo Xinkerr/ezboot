@@ -42,6 +42,8 @@ int ota_mgr_state_set(ota_mgr_state_t state);
 
 ota_mgr_state_t ota_mgr_state_get(void);
 
+int ota_mgr_image_hw_init(void);
+
 int ota_mgr_image_erase(uint32_t addr, uint32_t size);
 
 int ota_mgr_image_read(uint32_t addr, uint8_t *pdata, uint32_t size);
@@ -54,6 +56,12 @@ int ota_mgr_test(void);
 
 #if OTA_IMAGE_EXTERN_FLASH
 #include <norflash.h>
+
+static int ota_mgr_image_hw_init(void)
+{
+    return norflash_init();
+}
+
 static inline int ota_mgr_image_erase(uint32_t addr, uint32_t size)
 {
     return norflash_erase(addr, size);
@@ -71,6 +79,12 @@ static inline int ota_mgr_image_write(uint32_t addr, uint8_t *pdata, uint32_t si
 
 #else
 #include <ezb_flash.h>
+
+static int ota_mgr_image_hw_init(void)
+{
+    return 0;
+}
+
 static inline int ota_mgr_image_erase(uint32_t addr, uint32_t size)
 {
     return ezb_flash_erase(addr, size);
