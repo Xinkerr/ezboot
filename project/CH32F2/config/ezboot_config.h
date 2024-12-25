@@ -33,29 +33,38 @@
 //---------------------------Partition-------------------------------
 //bootloader
 #define BOOT_ADDRESS                        ((uint32_t)(0x08000000))
-// OTA manager
-  #define OTA_MGR_EXTERN_FLASH                1
-  #define OTA_MGR_DATA_ADDRESS                ((uint32_t)(1024*1024))
-  #define OTA_MGR_REGION_SIZE                 ((uint32_t)4096)
-//#define OTA_MGR_EXTERN_FLASH                0
-//#define OTA_MGR_DATA_ADDRESS                ((uint32_t)(0x08004000)-0x1000)
-//#define OTA_MGR_REGION_SIZE                 ((uint32_t)0x1000)
+
+//OTA image on chip
+// // application
+// #define APP_ADDRESS                         ((uint32_t)(0x08004000))
+// #define APP_REGION_SIZE                     ((uint32_t)56*1024)
+// // OTA manager
+// #define OTA_MGR_EXTERN_FLASH                0
+// #define OTA_MGR_REGION_SIZE                 ((uint32_t)0x1000)
+// #define OTA_MGR_DATA_ADDRESS                (APP_ADDRESS-OTA_MGR_REGION_SIZE)
+// //OTA image
+// #define OTA_IMAGE_EXTERN_FLASH              0
+// #define OTA_IMAGE_ADDRESS                   (APP_ADDRESS+APP_REGION_SIZE)
+// #define OTA_IMAGE_REGION_SIZE               (APP_REGION_SIZE)
+
+//OTA image on extern flash
 // application
- #define APP_ADDRESS                         ((uint32_t)(0x08004000))
- #define APP_REGION_SIZE                     ((uint32_t)112*1024)
-//#define APP_ADDRESS                         ((uint32_t)(0x08004000))
-//#define APP_REGION_SIZE                     ((uint32_t)56*1024)
+#define APP_ADDRESS                         ((uint32_t)(0x08004000))
+#define APP_REGION_SIZE                     ((uint32_t)112*1024)
+// OTA manager
+#define OTA_MGR_EXTERN_FLASH                1
+#define OTA_MGR_DATA_ADDRESS                ((uint32_t)(0*1024))
+#define OTA_MGR_REGION_SIZE                 ((uint32_t)4096)
 //OTA image
- #define OTA_IMAGE_EXTERN_FLASH              1
- #define OTA_IMAGE_ADDRESS                   ((uint32_t)(1028*1024))
- #define OTA_IMAGE_REGION_SIZE               ((uint32_t)112*1024)
-//#define OTA_IMAGE_EXTERN_FLASH              0
-//#define OTA_IMAGE_ADDRESS                   ((uint32_t)(0x08012000))
-//#define OTA_IMAGE_REGION_SIZE               ((uint32_t)56*1024)
+#define OTA_IMAGE_EXTERN_FLASH              1
+#define OTA_IMAGE_ADDRESS                   (OTA_MGR_DATA_ADDRESS+OTA_MGR_REGION_SIZE)
+#define OTA_IMAGE_REGION_SIZE               (APP_REGION_SIZE)
+
 
 //=================================================================BOOT=================================================================================
 //LOG UART
 #define CONFIG_LOG_UART_BAUDRATE            115200
 #define CONFIG_LOG_LEVEL                    3 //LEVEL INF
+#define CONFIG_TEST							            0
 
 #endif
