@@ -15,41 +15,63 @@ software or the use or other dealings in the software.
 索赔、损害或其他责任负责，无论是合同诉讼、侵权行为还是其他情况。
 """
 
-import intelhex
 import struct
 import os
 import sys
+import subprocess
 import binascii
 import argparse
 import time
 import random
+import intelhex
+import chardet
 from Crypto.Cipher import AES
 from Crypto.Hash import SHA256
+
+
+# 定义头部信息参数
+HEADER_LENGTH = 128
+HEAD_DATA = b'OTAB'
+
+# CONFIG参数
+DATA_VERSION = 0
+OTA_VERSION = 0
+OTA_VERSION_MAJOR = 0
+OTA_VERSION_MINOR = 0
+AES_KEY = 0
+AES_IV = 0
+AES128_ENCRYPT = 0
 
 def _pad_data(data, block_size):
     padding_length = block_size - (len(data) % block_size)
     padding = bytes([padding_length]) * padding_length
     return data + padding
 
-# 从 config.h 文件中读取参数
-with open('ezboot_config.h', 'r') as f:
-    for line in f:
-        if line.startswith('#define CONFIG_DATA_VERSION'):
-            DATA_VERSION = int(line.split()[-1], 16)
-        elif line.startswith('#define CONFIG_OTA_VERSION'):
-            OTA_VERSION = int(line.split()[-1], 16)
-            OTA_VERSION_MAJOR = (OTA_VERSION >> 16) & 0xFFFF
-            OTA_VERSION_MINOR = OTA_VERSION & 0xFFFF
-        elif line.startswith('#define CONFIG_OTA_IMAGE_AES_KEY'):
-            AES_KEY = bytes([int(x, 16) for x in line.split('{')[1].split('}')[0].split(', ')])
-        elif line.startswith('#define CONFIG_OTA_IMAGE_AES_IV'):
-            AES_IV = bytes([int(x, 16) for x in line.split('{')[1].split('}')[0].split(', ')])
-        elif line.startswith('#define CONFIG_OTA_IMAGE_AES128_ENCRYPT'):
-            AES128_ENCRYPT = int(line.split()[-1])
-
-# 定义头部信息参数
-HEADER_LENGTH = 128
-HEAD_DATA = b'OTAB'
+# 检测文件的编码
+def detect_encoding(file_path):
+    with open(file_path, 'rb') as f:
+        raw_data = f.read()  # 读取文件的原始字节
+        result = chardet.detect(raw_data)  # 检测编码
+        return result['encoding']  # 返回检测到的编码
+    
+def get_config(config_file):
+    global DATA_VERSION, OTA_VERSION, OTA_VERSION_MAJOR, OTA_VERSION_MINOR, AES_KEY, AES_IV, AES128_ENCRYPT
+    encoding_type = detect_encoding(config_file)
+    # 从 config.h 文件中读取参数
+    with open(config_file, 'r', encoding=encoding_type) as f:
+        for line in f:
+            if line.startswith('#define CONFIG_DATA_VERSION'):
+                DATA_VERSION = int(line.split()[-1], 16)
+            elif line.startswith('#define CONFIG_OTA_VERSION'):
+                OTA_VERSION = int(line.split()[-1], 16)
+                OTA_VERSION_MAJOR = (OTA_VERSION >> 16) & 0xFFFF
+                OTA_VERSION_MINOR = OTA_VERSION & 0xFFFF
+            elif line.startswith('#define CONFIG_OTA_IMAGE_AES_KEY'):
+                AES_KEY = bytes([int(x, 16) for x in line.split('{')[1].split('}')[0].split(', ')])
+            elif line.startswith('#define CONFIG_OTA_IMAGE_AES_IV'):
+                AES_IV = bytes([int(x, 16) for x in line.split('{')[1].split('}')[0].split(', ')])
+            elif line.startswith('#define CONFIG_OTA_IMAGE_AES128_ENCRYPT'):
+                AES128_ENCRYPT = int(line.split()[-1])
 
 def convert_hex_to_bin(hex_file, bin_file, encrypted_bin_file):
     # 读取 Intel HEX 文件
@@ -140,11 +162,14 @@ def convert_hex_to_bin(hex_file, bin_file, encrypted_bin_file):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Convert Intel HEX to OTA binary with header and AES encryption')
+    parser.add_argument('config_path', help='Input config path')
     parser.add_argument('hex_file', help='Input Intel HEX file')
     parser.add_argument('--generate-encrypted-bin', action='store_true', help='Generate AES-encrypted APP binary file')
     args = parser.parse_args()
 
     hex_file = args.hex_file
+    config_path = args.config_path
+    get_config(f'{config_path}/ezboot_config.h')
     ota_file = os.path.splitext(hex_file)[0] + f"_v{OTA_VERSION_MAJOR:X}.{OTA_VERSION_MINOR:X}.ota"
     encrypted_bin_file = os.path.splitext(hex_file)[0] + f"_v{OTA_VERSION_MAJOR:X}.{OTA_VERSION_MINOR:X}_encrypted.bin" if args.generate_encrypted_bin else None
     convert_hex_to_bin(hex_file, ota_file, encrypted_bin_file)
