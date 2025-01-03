@@ -97,7 +97,7 @@ static inline int ota_mgr_image_read(uint32_t addr, uint8_t *pdata, uint32_t siz
 
 static inline int ota_mgr_image_write(uint32_t addr, uint8_t *pdata, uint32_t size)
 {
-    return ezb_flash_read(addr, pdata, size);
+    return ezb_flash_write(addr, pdata, size);
 }
 #endif
 
