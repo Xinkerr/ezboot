@@ -40,4 +40,6 @@ script - OTA文件生成脚本
 ## 使用方法
 
 [EZBOOT移植](doc/PORTING.md)
+
 [APP适配指南](doc/APP.md)
+
