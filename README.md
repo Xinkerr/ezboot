@@ -6,7 +6,7 @@ EZBOOT 是一款专为 32 位ARM微控制器设计的引导加载程序。它定
 
 ## 特点
 
-- 资源占用低，ROM最小占用可达6K，RAM最小占用可达5K（支持OTA）
+- 资源占用低，ROM最小占用可达6K，RAM最小占用可达2K（支持OTA）
 
 
 - 安全，支持对OTA固件加密
@@ -40,5 +40,4 @@ script - OTA文件生成脚本
 ## 使用方法
 
 [EZBOOT移植](doc/PORTING.md)
-
 [APP适配指南](doc/APP.md)
