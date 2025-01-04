@@ -21,17 +21,17 @@
 1. 打开 Keil 的 **Options for Target -> Target**，在 **IROM1** 处调整 Flash 起始地址和大小，使其与 `ezboot_config.h` 中的字段定义 **APP_ADDRESS** 和 **APP_REGION_SIZE** 一致。
     ![Flash设置示例](image/Snipaste_2025-01-04_20-00-41.png)
 
-   (如果是 M0 内核系列芯片，还需要进行 RAM 重映展，调整 RAM 的起始地址和大小)
+   (如果是 M0 内核系列芯片，需要占用RAM部分资源对中断向量进行重映射，因此还要调整 RAM 的起始地址和大小)
 
 2. 若需要使用下载功能，在 **Options for Target -> Utilities -> Settings** 中设置 Flash 的起始地址和大小。
     ![下载设置示例](image/Snipaste_2025-01-04_20-08-23.png)
 
 #### 设置中断向量偏移量
 
-1. 在 **Options for Target -> C/C++ -> Define** 中添加字段定义 **USER_VECT_TAB_ADDRESS**。
+1. 在 **Options for Target -> C/C++ -> Define** 中添加字段定义 **USER_VECT_TAB_ADDRESS**。![中断向量设置示例1](image/Snipaste_2025-01-04_20-17-15.png)
 
 2. 修改 `system_stm32f1xx.c` 文件中的字段 **VECT_TAB_OFFSET** 的值。
-    ![中断向量设置示例1](image/Snipaste_2025-01-04_20-17-15.png)
+    
     ![中断向量设置示例2](image/Snipaste_2025-01-04_20-17-42.png)
 
 3. 对于 M0 内核系列芯片，无法使用以上方法，需使用以下代码进行中断向量表的 RAM 重映展：
@@ -83,12 +83,19 @@
 在代码中调用 **ota_mgr** 接口实现 OTA 功能，具体步骤如下：
 
 1. **初始化 OTA 管理程序**
+    
     在程序初始化阶段调用 `ota_mgr_image_hw_init()`。
+    
 2. **擦除 OTA 镜像存储区域**
+
     在下载 OTA 文件前调用 `ota_mgr_image_erase()`。
+
 3. **写入 OTA 镜像数据**
+
     下载 OTA 文件时调用 `ota_mgr_image_write()`，将文件内容写入 OTA 镜像存储区域。
+
 4. **请求 OTA 升级**
+
     文件下载完成后，调用 `ota_mgr_state_set(OTA_REQUEST)` 向 EZBOOT 请求 OTA 升级，并执重启程序。
 
 ### 8.添加OTA文件生成脚本
