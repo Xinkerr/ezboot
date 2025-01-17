@@ -63,6 +63,8 @@
 
 
 //=================================================================BOOT=================================================================================
+#define CONFIG_PG_UART_USE                          1
+#define CONFIG_PG_UART_RB_SIZE                      512
 //LOG UART
 #define CONFIG_LOG_UART_BAUDRATE            115200
 #define CONFIG_LOG_LEVEL                    3 //LEVEL INF
