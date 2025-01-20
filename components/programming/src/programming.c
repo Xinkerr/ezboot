@@ -28,7 +28,16 @@
 
 #define DELAY_TIME_MS       10
 
-static uint8_t tlv_data[512];
+static uint8_t recv_buf[512];
+static uint16_t recv_len = 0;
+static tlv_t pg_tlv;
+
+static pg_payload_handler(uint8_t* value_data, uint16_t len);
+
+static const tlv_tb_t pg_tlv_tb[] = 
+{
+    {0x01, pg_payload_handler},
+};
 
 static inline void pg_drv_init(void)
 {
@@ -64,16 +73,47 @@ static int wait_to_connect(void)
     }
 }
 
+static void data_left_move(uint8_t* pdata, uint16_t len)
+{
+    int i;
+    for(i=0; i<len; i++)
+    {
+        
+    }
+    
+}
+
 void programming_process(void)
 {
-    
     pg_drv_init();
+    pg_tlv.tlv_table = pg_tlv_tb;
+    pg_tlv.tag_count = sizeof(pg_tlv_tb)/sizeof(tlv_tb_t);
+
     if(wait_to_connect() != 0)
         return;
     while(1)
     {
+        uint16_t got_len = pg_drv_get(&recv_buf[recv_len], sizeof(recv_buf)-recv_len);
+        recv_len += got_len;
         //解析pg uart接收到的数据
+        tlv_err_t err = tlv_parse(&pg_tlv, recv_buf, recv_len);
+        while(err == TLV_TAG_NOT_FOUND || err == TLV_HANDLE_ERROR)
+        {
+            recv_buf
+            err = tlv_parse(&pg_tlv, recv_buf, recv_len);
+        }
+        switch (err)
+        {
+        case TLV_OK:
+            recv_len = 0;
+            memset(recv_buf, 0, sizeof(recv_buf));
+            break;
 
+        case TLV_TAG_NOT_FOUND:
+        
+        default:
+            break;
+        }
     }
 }
 
