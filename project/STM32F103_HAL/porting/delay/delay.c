@@ -21,59 +21,9 @@
 #include <stdint.h>
 #include <mcu_header.h>
 #include <ezboot_config.h>
-#include <pg_uart_drv.h>
 #include <delay.h>
-#include <tlv.h>
-#include <programming.h>
 
-#define DELAY_TIME_MS       10
-
-static uint8_t tlv_data[512];
-
-static inline void pg_drv_init(void)
+void delay_ms(uint32_t ms)
 {
-    #if CONFIG_PG_UART_USE
-        pg_uart_drv_init();
-    #endif
+    HAL_Delay(ms);
 }
-
-static inline void pg_drv_send(const void* pdata, uint16_t len)
-{
-    #if CONFIG_PG_UART_USE
-        pg_uart_drv_send(pdata, len);
-    #endif
-}
-
-static inline uint16_t pg_drv_get(uint8_t* pdata, uint16_t len)
-{
-    #if CONFIG_PG_UART_USE
-        return pg_uart_drv_get(pdata, len);
-    #else
-        return 0;
-    #endif
-}
-
-static int wait_to_connect(void)
-{
-    uint32_t wait_time = 0;
-    while (wait_time <= CONFIG_WAIT_TIME_FOR_PG)
-    {
-        //解析pg uart接收到的数据
-        delay_ms(DELAY_TIME_MS);
-        wait_time += DELAY_TIME_MS;
-    }
-}
-
-void programming_process(void)
-{
-    
-    pg_drv_init();
-    if(wait_to_connect() != 0)
-        return;
-    while(1)
-    {
-        //解析pg uart接收到的数据
-
-    }
-}
-
