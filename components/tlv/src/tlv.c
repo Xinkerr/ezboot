@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <string.h>
 #include <tlv.h>
 #include <ezboot_config.h>
 
@@ -29,4 +30,13 @@ int tlv_parse(tlv_t* tlv, uint8_t* pdata, uint16_t pdata_size)
         }
     }
     return TLV_TAG_NOT_FOUND;
+}
+
+uint16_t tlv_add(uint8_t* buf, uint8_t tag, uint16_t len, void* pdata)
+{
+    buf[0] = tag;
+    memcpy(buf+1, &len, 2);
+    memcpy(buf+3, pdata, len);
+
+    return len+3;
 }

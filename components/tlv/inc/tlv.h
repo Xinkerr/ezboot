@@ -48,4 +48,6 @@ typedef struct
 
 int tlv_parse(tlv_t* tlv, uint8_t* pdata, uint16_t pdata_size);
 
+uint16_t tlv_add(uint8_t* buf, uint8_t tag, uint16_t len, void* pdata);
+
 #endif

@@ -28,9 +28,7 @@
 #include <delay.h>
 #include <tlv.h>
 #include <programming.h>
-#if CONFIG_LOG_LEVEL
 #include <mlog.h>
-#endif
 
 #define DELAY_TIME_MS       10
 
@@ -182,6 +180,21 @@ static int pg_protocol_recv(void)
     return -1;
 }
 
+static uint16_t pg_protocol_format(uint8_t* pg_buf, uint8_t* payload_data, uint16_t payload_len)
+{
+    uint16_t crc_res;
+    pg_buf[0] = PG_HEAD_L;
+    pg_buf[1] = PG_HEAD_H;
+    memcpy(pg_buf+2, &payload_len, 2);
+    crc_res = crc16_ccitt(0, pg_buf+2, 2);
+    memcpy(pg_buf+4, &crc_res, 2);
+    memcpy(pg_buf+6, payload_data, payload_len);
+    crc_res = crc16_ccitt(0, pg_buf, payload_len+6);
+    memcpy(pg_buf+payload_len+6, &crc_res, 2);
+
+    return payload_len+8;
+}
+
 static int wait_to_connect(void)
 {
     uint32_t wait_time = 0;
@@ -224,16 +237,33 @@ void programming_process(void)
 
 static int pg_connect_handler(uint8_t* value_data, uint16_t len)
 {
+    uint8_t send_buf[32];
+    uint8_t payload_buf[8];
+    uint8_t response_result = 0x01;
+    uint16_t tlv_len;
+    uint16_t send_len;
+
+    //请求建立连接
     if(*value_data == 0x01)
     {
         mlog_i("request connect");
         connected_state = true;
     }
+    //请求断开连接
     else if(*value_data == 0x02)
     {
         mlog_i("request disconnect");
         connected_state = false;
     }
+    else
+    {
+        return -1;
+    }
+
+    //协议数据组包
+    tlv_len = tlv_add(payload_buf, 0x41, 1, &response_result);
+    send_len = pg_protocol_format(send_buf, payload_buf, tlv_len);
+    pg_drv_send(send_buf, send_len);
 
     return 0;
 }
@@ -242,7 +272,17 @@ static int pg_reset_handler(uint8_t* value_data, uint16_t len)
 {
     if(!connected_state)
         return -1;
-        
+
+    uint8_t send_buf[32];
+    uint8_t payload_buf[8];
+    uint8_t response_result = 0x01;
+    uint16_t tlv_len;
+    uint16_t send_len;
+
+    tlv_len = tlv_add(payload_buf, 0x47, 1, &response_result);
+    send_len = pg_protocol_format(send_buf, payload_buf, tlv_len);
+    pg_drv_send(send_buf, send_len);
+
     mlog_i("reset chip");
     reboot();
     return 0;
