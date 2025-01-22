@@ -81,7 +81,7 @@
           </BeforeMake>
           <AfterMake>
             <RunUserProg1>0</RunUserProg1>
-            <RunUserProg2>1</RunUserProg2>
+            <RunUserProg2>0</RunUserProg2>
             <UserProg1Name></UserProg1Name>
             <UserProg2Name></UserProg2Name>
             <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F103xB</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;../config;../porting/mcu_header;../../../components/boot/inc;../../../components/crypt/inc;../../../components/ezb_flash/inc;../../../components/mlog/inc;../../../components/norflash/inc;../../../components/ota/inc;../../../components/ota_mgr/inc;..\..\..\components\programming\inc;..\..\..\components\ringbuffer\inc</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;../config;../porting/mcu_header;../../../components/boot/inc;../../../components/crypt/inc;../../../components/ezb_flash/inc;../../../components/mlog/inc;../../../components/norflash/inc;../../../components/ota/inc;../../../components/ota_mgr/inc;../../../components/programming/inc;../../../components/ringbuffer/inc;../../../components/delay/inc;../../../components/tlv/inc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -752,6 +752,11 @@
               <FileType>1</FileType>
               <FilePath>..\porting\programming\pg_uart.c</FilePath>
             </File>
+            <File>
+              <FileName>delay.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\porting\delay\delay.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -831,6 +836,11 @@
               <FileName>programming.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\components\programming\src\programming.c</FilePath>
+            </File>
+            <File>
+              <FileName>tlv.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\components\tlv\src\tlv.c</FilePath>
             </File>
           </Files>
         </Group>

@@ -1,4 +1,7 @@
 /**
+ * 
+ * Copyright (c) 2025 Xinkerr
+ * 
  * SPDX-License-Identifier: Apache-2.0
  *
  * Disclaimer / 免责声明
@@ -19,5 +22,7 @@
 #define __BOOT_H__
 
 void app_enter(void);
+
+void reboot(void);
 
 #endif

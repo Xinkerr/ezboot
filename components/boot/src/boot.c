@@ -1,4 +1,7 @@
 /**
+ * 
+ * Copyright (c) 2025 Xinkerr
+ * 
  * SPDX-License-Identifier: Apache-2.0
  *
  * Disclaimer / 免责声明
@@ -37,4 +40,9 @@ void app_enter(void)
     __set_MSP(*(__IO uint32_t*)APP_ADDRESS);
     // 跳转到app
     Jump_To_Application();
+}
+
+void reboot(void)
+{
+    NVIC_SystemReset();
 }

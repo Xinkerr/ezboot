@@ -1,4 +1,7 @@
 /**
+ * 
+ * Copyright (c) 2025 Xinkerr
+ * 
  * SPDX-License-Identifier: Apache-2.0
  *
  * Disclaimer / 免责声明
@@ -63,12 +66,13 @@
 
 
 //=================================================================BOOT=================================================================================
+#define CONFIG_PROGRAMMING_SUPPORT                  1
 #define CONFIG_PG_UART_USE                          1
 #define CONFIG_PG_UART_RB_SIZE                      512
 #define CONFIG_WAIT_TIME_FOR_PG                     5000    
 //LOG UART
 #define CONFIG_LOG_UART_BAUDRATE            115200
-#define CONFIG_LOG_LEVEL                    3 //LEVEL INF
+#define CONFIG_LOG_LEVEL                    4 //LEVEL INF
 #define CONFIG_TEST							0
 
 #endif
