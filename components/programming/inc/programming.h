@@ -21,4 +21,7 @@
 #ifndef __PROGRAMMING_H__
 #define __PROGRAMMING_H__
 
+
+void programming_process(void);
+
 #endif

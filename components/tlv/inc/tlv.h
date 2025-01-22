@@ -23,6 +23,8 @@
 
 #include <stdint.h>
 
+typedef uint16_t tlv_len_t;
+
 typedef enum 
 {
     TLV_OK = 0,
@@ -30,12 +32,12 @@ typedef enum
     TLV_SIZE_SMALL = -2,
     TLV_DATA_INCOMPLETE = -3,
     TLV_HANDLE_ERROR = -4
-}tlv_err_t;
+}tlv_ret_t;
 
 typedef struct
 {
     uint8_t tag;
-    void (*handler)(uint8_t* value_data, uint16_t len);
+    int (*handler)(uint8_t* value_data, uint16_t len);
 }tlv_tb_t;
 
 typedef struct 
@@ -44,6 +46,6 @@ typedef struct
     uint16_t tag_count;
 }tlv_t;
 
-tlv_err_t tlv_parse(tlv_t* tlv, uint8_t* pdata, uint16_t pdata_size);
+int tlv_parse(tlv_t* tlv, uint8_t* pdata, uint16_t pdata_size);
 
 #endif
