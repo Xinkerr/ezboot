@@ -25,11 +25,11 @@
 #include <boot.h>
 #include <ezboot_config.h>
 #include <pg_uart_drv.h>
-#include <delay.h>
 #include <tlv.h>
 #include <programming.h>
 #include <mlog.h>
 #include <ezb_flash.h>
+#include <uptime.h>
 
 #define DELAY_TIME_MS           10
 
@@ -218,8 +218,23 @@ static uint16_t pg_protocol_format(uint8_t* pg_buf, uint8_t* payload_data, uint1
 
 static int wait_to_connect(void)
 {
-    uint32_t wait_time = 0;
-    while (wait_time <= CONFIG_WAIT_TIME_FOR_PG)
+    // uint32_t wait_time = 0;
+    // while (wait_time <= CONFIG_WAIT_TIME_FOR_PG)
+    // {
+    //     //解析pg uart接收到的数据
+    //     pg_protocol_recv();
+    //     //检查是否建立连接
+    //     if(connected_state)
+    //         return 0;
+
+    //     delay_ms(DELAY_TIME_MS);
+    //     wait_time += DELAY_TIME_MS;
+    // }
+	// return -1;
+
+    uint32_t start_time = sys_uptime_get();
+    uint32_t current_time = sys_uptime_get();
+    while (current_time - start_time <= CONFIG_WAIT_TIME_FOR_PG)
     {
         //解析pg uart接收到的数据
         pg_protocol_recv();
@@ -227,8 +242,7 @@ static int wait_to_connect(void)
         if(connected_state)
             return 0;
 
-        delay_ms(DELAY_TIME_MS);
-        wait_time += DELAY_TIME_MS;
+        current_time = sys_uptime_get();
     }
 	return -1;
 }
@@ -256,6 +270,18 @@ void programming_process(void)
     }
 }
 
+static uint32_t random_generate(void)
+{
+    uint32_t random_value = sys_uptime_get();
+    mlog_d("uptime:%d", random_value);
+    random_value = (random_value << 3)      // 左移操作扩大随机数
+                    ^ (random_value >> 5)      // 右移操作增加随机性
+                    ^ (random_value * 2654435761U); // 使用黄金分割常数混合
+    mlog_d("random_value:%u", random_value);
+
+    return random_value;
+}
+
 static int pg_connect_handler(uint8_t* value_data, uint16_t len)
 {
     uint8_t send_buf[32];
@@ -263,6 +289,8 @@ static int pg_connect_handler(uint8_t* value_data, uint16_t len)
     uint8_t response_result = 0x01;
     uint16_t tlv_len;
     uint16_t send_len;
+
+    random_generate();
 
     //请求建立连接
     if(*value_data == 0x01)

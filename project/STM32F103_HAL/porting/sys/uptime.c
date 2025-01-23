@@ -21,9 +21,9 @@
 #include <stdint.h>
 #include <mcu_header.h>
 #include <ezboot_config.h>
-#include <delay.h>
+#include <uptime.h>
 
-void delay_ms(uint32_t ms)
+uint32_t sys_uptime_get(void)
 {
-    HAL_Delay(ms);
+    return HAL_GetTick();
 }

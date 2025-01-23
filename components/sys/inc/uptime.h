@@ -18,11 +18,11 @@
  * 索赔、损害或其他责任负责，无论是合同诉讼、侵权行为还是其他情况。
  */
 
-#ifndef __DELAY_H__
-#define __DELAY_H__
+#ifndef __SYS_UPTIME_H__
+#define __SYS_UPTIME_H__
 
 #include <stdint.h>
 
-void delay_ms(uint32_t ms);
+uint32_t sys_uptime_get(void);
 
 #endif

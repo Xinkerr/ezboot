@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F103xB</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;../config;../porting/mcu_header;../../../components/boot/inc;../../../components/crypt/inc;../../../components/ezb_flash/inc;../../../components/mlog/inc;../../../components/norflash/inc;../../../components/ota/inc;../../../components/ota_mgr/inc;../../../components/programming/inc;../../../components/ringbuffer/inc;../../../components/delay/inc;../../../components/tlv/inc</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;../config;../porting/mcu_header;../../../components/boot/inc;../../../components/crypt/inc;../../../components/ezb_flash/inc;../../../components/mlog/inc;../../../components/norflash/inc;../../../components/ota/inc;../../../components/ota_mgr/inc;../../../components/programming/inc;../../../components/ringbuffer/inc;../../../components/tlv/inc;..\..\..\components\sys\inc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -753,9 +753,9 @@
               <FilePath>..\porting\programming\pg_uart.c</FilePath>
             </File>
             <File>
-              <FileName>delay.c</FileName>
+              <FileName>uptime.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\porting\delay\delay.c</FilePath>
+              <FilePath>..\porting\sys\uptime.c</FilePath>
             </File>
           </Files>
         </Group>
