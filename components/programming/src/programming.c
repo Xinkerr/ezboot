@@ -29,11 +29,28 @@
 #include <tlv.h>
 #include <programming.h>
 #include <mlog.h>
+#include <ezb_flash.h>
 
-#define DELAY_TIME_MS       10
+#define DELAY_TIME_MS           10
 
 #define PG_HEAD_L               0xaa
 #define PG_HEAD_H               0x55
+
+#define REQUEST_CONN_TAG        0x21
+#define SHAKE_HAND_1_TAG        0x22
+#define SHAKE_HAND_2_TAG        0x23
+#define ERASE_TAG               0x24
+#define WRITE_TAG               0x25
+#define READ_TAG                0x26
+#define RESET_TAG               0x27
+
+#define CONN_RESP_TAG           0x41
+#define SHAKE_HAND_1_RESP_TAG   0x42
+#define SHAKE_HAND_2_RESP_TAG   0x43
+#define ERASE_RESULT_TAG        0x44
+#define WRITE_RESULT_TAG        0x45
+#define READ_DATA_TAG           0x46
+#define RESET_RESP_TAG          0x47
 
 static bool connected_state = false;
 
@@ -43,11 +60,15 @@ static tlv_t pg_payload_tlv;
 
 static int pg_connect_handler(uint8_t* value_data, uint16_t len);
 static int pg_reset_handler(uint8_t* value_data, uint16_t len);
+static int pg_erase_handler(uint8_t* value_data, uint16_t len);
+static int pg_write_handler(uint8_t* value_data, uint16_t len);
 
 static const tlv_tb_t pg_payload_tlv_tb[] = 
 {
-    {0x21, pg_connect_handler},
-    {0x27, pg_reset_handler}
+    {REQUEST_CONN_TAG, pg_connect_handler},
+    {RESET_TAG, pg_reset_handler},
+    {ERASE_TAG, pg_erase_handler},
+    {WRITE_TAG, pg_write_handler}
 };
 
 static inline void pg_drv_init(void)
@@ -261,7 +282,7 @@ static int pg_connect_handler(uint8_t* value_data, uint16_t len)
     }
 
     //协议数据组包
-    tlv_len = tlv_add(payload_buf, 0x41, 1, &response_result);
+    tlv_len = tlv_add(payload_buf, CONN_RESP_TAG, 1, &response_result);
     send_len = pg_protocol_format(send_buf, payload_buf, tlv_len);
     pg_drv_send(send_buf, send_len);
 
@@ -279,11 +300,107 @@ static int pg_reset_handler(uint8_t* value_data, uint16_t len)
     uint16_t tlv_len;
     uint16_t send_len;
 
-    tlv_len = tlv_add(payload_buf, 0x47, 1, &response_result);
+    tlv_len = tlv_add(payload_buf, RESET_RESP_TAG, 1, &response_result);
     send_len = pg_protocol_format(send_buf, payload_buf, tlv_len);
     pg_drv_send(send_buf, send_len);
 
     mlog_i("reset chip");
     reboot();
     return 0;
+}
+
+static int pg_erase_handler(uint8_t* value_data, uint16_t len)
+{
+    mlog_d("%s", __FUNCTION__);
+    if(!connected_state)
+        return -1;
+
+    uint8_t send_buf[32];
+    uint8_t payload_buf[8];
+    uint8_t response_result;
+    uint16_t tlv_len;
+    uint16_t send_len;
+    int ret;
+
+    uint32_t erase_addr, erase_size;
+    memcpy(&erase_addr, value_data, sizeof(erase_addr));
+    memcpy(&erase_size, value_data+sizeof(erase_addr), sizeof(erase_size));
+    mlog_d("erase addr:0x%x", erase_addr);
+    mlog_d("erase size:%u", erase_size);
+    
+    if(erase_addr >= APP_ADDRESS)
+    {
+        if(ezb_flash_erase(erase_addr, erase_size) >= 0)
+        {
+            mlog_d("erase success");
+            ret = 0;
+        }
+        else
+        {
+            mlog_d("erase fail");
+            ret = -3;
+        }
+    }
+    else
+        ret = -2;
+
+    if(ret == 0)
+        response_result = 0x00;
+    else
+        response_result = 0xff;
+
+    tlv_len = tlv_add(payload_buf, ERASE_RESULT_TAG, 1, &response_result);
+    send_len = pg_protocol_format(send_buf, payload_buf, tlv_len);
+    pg_drv_send(send_buf, send_len);
+    
+    return ret;
+}
+
+static int pg_write_handler(uint8_t* value_data, uint16_t len)
+{
+    mlog_d("%s", __FUNCTION__);
+    if(!connected_state)
+        return -1;
+
+    uint8_t send_buf[32];
+    uint8_t payload_buf[8];
+    uint8_t response_result;
+    uint16_t tlv_len;
+    uint16_t send_len;
+    int ret;
+
+    uint32_t write_addr;
+    uint16_t write_size;
+    memcpy(&write_addr, value_data, sizeof(write_addr));
+    memcpy(&write_size, value_data+sizeof(write_addr), sizeof(uint16_t));
+    mlog_d("write addr:0x%x", write_addr);
+    mlog_d("write size:%u", write_size);
+    uint8_t* write_ptr = value_data + sizeof(write_addr) + sizeof(uint16_t);
+    
+    if(write_addr >= APP_ADDRESS)
+    {
+        if(ezb_flash_write(write_addr, write_ptr, write_size) >= 0)
+        {
+            mlog_d("write success");
+            ret = 0;
+        }
+        else
+        {
+            mlog_d("write fail");
+            ret = -3;
+        }
+    }
+    else
+        ret = -2;
+
+    if(ret == 0)
+        response_result = 0x00;
+    else
+        response_result = 0xff;
+
+    tlv_len = tlv_add(payload_buf, WRITE_RESULT_TAG, 1, &response_result);
+    send_len = pg_protocol_format(send_buf, payload_buf, tlv_len);
+    pg_drv_send(send_buf, send_len);
+    
+    return ret;
 }
