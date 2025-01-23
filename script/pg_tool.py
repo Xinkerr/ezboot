@@ -59,8 +59,15 @@ def generate_frame(tag: int, value_length: int, value: List[int]) -> bytes:
 
     return frame
 
+def parse_value_input(value_input: str) -> List[int]:
+    """解析输入的 Value，可以支持用空格分隔或无分隔的输入"""
+    value_input = value_input.replace(" ", "")  # 去除所有空格
+    if len(value_input) % 2 != 0:
+        raise ValueError("输入的 Value 数据长度无效，必须是偶数字节长度。")
+    return [int(value_input[i:i+2], 16) for i in range(0, len(value_input), 2)]
+
 def main():
-    print("请输入 Tag、Value 长度和 Value (Value 用十六进制表示并以空格分隔，例如: 01 02 03)：")
+    print("请输入 Tag、Value 长度和 Value (Value 可用十六进制输入，空格可选，例如: 01 02 03 或 010203)：")
 
     # 输入 Tag
     tag = int(input("Tag (十六进制): "), 16)
@@ -70,8 +77,13 @@ def main():
 
     # 输入 Value
     if value_length > 0:
-        value_input = input("Value (十六进制，用空格分隔): ").strip()
-        value = [int(x, 16) for x in value_input.split()]
+        value_input = input("Value (十六进制，可用空格分隔或连续输入): ").strip()
+        try:
+            value = parse_value_input(value_input)
+        except ValueError as e:
+            print(f"错误: {e}")
+            return
+
         if len(value) != value_length:
             print("错误: 输入的 Value 长度与指定的长度不匹配！")
             print("LEN=" + str(len(value)))
