@@ -74,6 +74,7 @@ def main():
         value = [int(x, 16) for x in value_input.split()]
         if len(value) != value_length:
             print("错误: 输入的 Value 长度与指定的长度不匹配！")
+            print("LEN=" + str(len(value)))
             return
     else:
         value = []
