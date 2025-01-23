@@ -30,6 +30,7 @@
 #include <mlog.h>
 #include <ezb_flash.h>
 #include <uptime.h>
+#include <tinycrypt/sha256.h>
 
 #define DELAY_TIME_MS           10
 
@@ -53,22 +54,31 @@
 #define RESET_RESP_TAG          0x47
 
 static bool connected_state = false;
+static bool handshake1_flag = false;
+static bool handshake_complete = false;
 
 static uint8_t recv_buf[512];
 static uint16_t recv_len = 0;
 static tlv_t pg_payload_tlv;
+static uint32_t shake_random;
+
+static uint8_t passcode[] = CONFIG_PG_PASSCODE;
 
 static int pg_connect_handler(uint8_t* value_data, uint16_t len);
 static int pg_reset_handler(uint8_t* value_data, uint16_t len);
 static int pg_erase_handler(uint8_t* value_data, uint16_t len);
 static int pg_write_handler(uint8_t* value_data, uint16_t len);
+static int pg_shake1_handler(uint8_t* value_data, uint16_t len);
+static int pg_shake2_handler(uint8_t* value_data, uint16_t len);
 
 static const tlv_tb_t pg_payload_tlv_tb[] = 
 {
     {REQUEST_CONN_TAG, pg_connect_handler},
     {RESET_TAG, pg_reset_handler},
     {ERASE_TAG, pg_erase_handler},
-    {WRITE_TAG, pg_write_handler}
+    {WRITE_TAG, pg_write_handler},
+    {SHAKE_HAND_1_TAG, pg_shake1_handler},
+    {SHAKE_HAND_2_TAG, pg_shake2_handler},
 };
 
 static inline void pg_drv_init(void)
@@ -218,20 +228,6 @@ static uint16_t pg_protocol_format(uint8_t* pg_buf, uint8_t* payload_data, uint1
 
 static int wait_to_connect(void)
 {
-    // uint32_t wait_time = 0;
-    // while (wait_time <= CONFIG_WAIT_TIME_FOR_PG)
-    // {
-    //     //解析pg uart接收到的数据
-    //     pg_protocol_recv();
-    //     //检查是否建立连接
-    //     if(connected_state)
-    //         return 0;
-
-    //     delay_ms(DELAY_TIME_MS);
-    //     wait_time += DELAY_TIME_MS;
-    // }
-	// return -1;
-
     uint32_t start_time = sys_uptime_get();
     uint32_t current_time = sys_uptime_get();
     while (current_time - start_time <= CONFIG_WAIT_TIME_FOR_PG)
@@ -273,11 +269,11 @@ void programming_process(void)
 static uint32_t random_generate(void)
 {
     uint32_t random_value = sys_uptime_get();
-    mlog_d("uptime:%d", random_value);
+    // mlog_d("uptime:%d", random_value);
     random_value = (random_value << 3)      // 左移操作扩大随机数
                     ^ (random_value >> 5)      // 右移操作增加随机性
                     ^ (random_value * 2654435761U); // 使用黄金分割常数混合
-    mlog_d("random_value:%u", random_value);
+    // mlog_d("random_value:%u", random_value);
 
     return random_value;
 }
@@ -289,8 +285,6 @@ static int pg_connect_handler(uint8_t* value_data, uint16_t len)
     uint8_t response_result = 0x01;
     uint16_t tlv_len;
     uint16_t send_len;
-
-    random_generate();
 
     //请求建立连接
     if(*value_data == 0x01)
@@ -342,6 +336,8 @@ static int pg_erase_handler(uint8_t* value_data, uint16_t len)
     mlog_d("%s", __FUNCTION__);
     if(!connected_state)
         return -1;
+    if(!handshake_complete)
+        return -1;
 
     uint8_t send_buf[32];
     uint8_t payload_buf[8];
@@ -389,6 +385,8 @@ static int pg_write_handler(uint8_t* value_data, uint16_t len)
     mlog_d("%s", __FUNCTION__);
     if(!connected_state)
         return -1;
+    if(!handshake_complete)
+        return -1;
 
     uint8_t send_buf[32];
     uint8_t payload_buf[8];
@@ -427,6 +425,86 @@ static int pg_write_handler(uint8_t* value_data, uint16_t len)
         response_result = 0xff;
 
     tlv_len = tlv_add(payload_buf, WRITE_RESULT_TAG, 1, &response_result);
+    send_len = pg_protocol_format(send_buf, payload_buf, tlv_len);
+    pg_drv_send(send_buf, send_len);
+    
+    return ret;
+}
+
+static int pg_shake1_handler(uint8_t* value_data, uint16_t len)
+{
+    mlog_d("%s", __FUNCTION__);
+    if(!connected_state)
+        return -1;
+
+    uint8_t send_buf[32];
+    uint8_t payload_buf[8];
+    uint16_t tlv_len;
+    uint16_t send_len;
+
+    shake_random = random_generate();
+    mlog_hex_d("shake:", &shake_random, 4);
+
+    tlv_len = tlv_add(payload_buf, SHAKE_HAND_1_RESP_TAG, 4, &shake_random);
+    send_len = pg_protocol_format(send_buf, payload_buf, tlv_len);
+    pg_drv_send(send_buf, send_len);
+
+    handshake1_flag = true;
+
+    return 0;
+}
+
+static int pg_shake2_handler(uint8_t* value_data, uint16_t len)
+{
+    mlog_d("%s", __FUNCTION__);
+    if(!connected_state)
+        return -1;
+    if(!handshake1_flag)
+        return -1;
+
+    uint8_t send_buf[32];
+    uint8_t payload_buf[8];
+    uint8_t response_result;
+    uint16_t tlv_len;
+    uint16_t send_len;
+    int ret;
+
+    if(len == 32)
+    {
+        uint8_t* shakehand_data_ptr = value_data;
+        struct tc_sha256_state_struct sha256_s;
+        uint8_t sha256_result[32];
+        uint8_t merge[4+sizeof(passcode)];
+
+        memcpy(merge, &shake_random, 4);
+        memcpy(merge+4, passcode, sizeof(passcode));
+
+        tc_sha256_init(&sha256_s);
+        tc_sha256_update(&sha256_s, merge, sizeof(merge));
+        tc_sha256_final(sha256_result, &sha256_s);
+        mlog_hex_d("SHA256:", sha256_result, 32);
+
+        if(memcmp(sha256_result, shakehand_data_ptr, 32) == 0)
+        {
+            mlog_d("shake hand complete");
+            response_result = 0;
+            ret = 0;
+            handshake_complete = true;
+        }
+        else
+        {
+            mlog_d("shake hand 2 fail");
+            response_result = 0xff;
+            ret = -2;
+        }
+    }
+    else
+    {
+        response_result = 0xff;
+        ret = -2;
+    }
+
+    tlv_len = tlv_add(payload_buf, SHAKE_HAND_2_RESP_TAG, 1, &response_result);
     send_len = pg_protocol_format(send_buf, payload_buf, tlv_len);
     pg_drv_send(send_buf, send_len);
     
