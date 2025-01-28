@@ -26,6 +26,9 @@ python -m pip install chardet
 echo installing pyserial...
 python -m pip install pyserial
 
+echo installing tqdm...
+python -m pip install tqdm
+
 :: 安装完成
 echo compelet
 pause
