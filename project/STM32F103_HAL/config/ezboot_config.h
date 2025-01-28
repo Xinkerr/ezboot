@@ -42,7 +42,7 @@
 
 //OTA image on chip
 // application
-#define APP_ADDRESS                           ((uint32_t)(0x08003800))
+#define APP_ADDRESS                           ((uint32_t)(0x08004000))
 #define APP_REGION_SIZE                       ((uint32_t)(57*1024))
 // OTA manager
 #define OTA_MGR_EXTERN_FLASH                  0
@@ -71,11 +71,12 @@
 //=================================================================BOOT=================================================================================
 #define CONFIG_PROGRAMMING_SUPPORT                  1
 #define CONFIG_PG_UART_USE                          1
-#define CONFIG_PG_UART_RB_SIZE                      512
+#define CONFIG_PG_UART_RB_SIZE                      5000
+#define CONFIG_PG_RECV_BUF_SIZE											5000
 #define CONFIG_WAIT_TIME_FOR_PG                     5000    
 //LOG UART
 #define CONFIG_LOG_UART_BAUDRATE            115200
-#define CONFIG_LOG_LEVEL                    3 //LEVEL INF
+#define CONFIG_LOG_LEVEL                    0 //LEVEL INF
 #define CONFIG_TEST							0
 
 #endif
