@@ -57,7 +57,7 @@ static bool connected_state = false;
 static bool handshake1_flag = false;
 static bool handshake_complete = false;
 
-static uint8_t recv_buf[512];
+static uint8_t recv_buf[CONFIG_PG_RECV_BUF_SIZE];
 static uint16_t recv_len = 0;
 static tlv_t pg_payload_tlv;
 static uint32_t shake_random;
@@ -318,7 +318,7 @@ static int pg_reset_handler(uint8_t* value_data, uint16_t len)
 
     uint8_t send_buf[32];
     uint8_t payload_buf[8];
-    uint8_t response_result = 0x01;
+    uint8_t response_result = 0x00;
     uint16_t tlv_len;
     uint16_t send_len;
 
@@ -383,10 +383,10 @@ static int pg_erase_handler(uint8_t* value_data, uint16_t len)
 static int pg_write_handler(uint8_t* value_data, uint16_t len)
 {
     mlog_d("%s", __FUNCTION__);
-    if(!connected_state)
-        return -1;
-    if(!handshake_complete)
-        return -1;
+   if(!connected_state)
+       return -1;
+   if(!handshake_complete)
+       return -1;
 
     uint8_t send_buf[32];
     uint8_t payload_buf[8];
