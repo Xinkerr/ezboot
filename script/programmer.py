@@ -1,13 +1,26 @@
+import sys
 import serial
 import struct
 import time
 import hashlib
-from typing import List
+import argparse  # 导入 argparse 模块
+from typing import List, Optional, Tuple
 from intelhex import IntelHex  # 用于解析 Intel Hex 文件
-import os
+from tqdm import tqdm  # 导入 tqdm 库用于进度条
 
 # STM32F103的扇区大小（4KB）
 SECTOR_SIZE = 0x1000  # 4KB
+
+# 最大重试次数
+MAX_RETRIES = 3
+
+# 增加调试开关，默认关闭
+DEBUG = False
+
+def debug_print(*args, **kwargs):
+    """根据 DEBUG 变量的状态决定是否打印调试信息"""
+    if DEBUG:
+        print(*args, **kwargs)
 
 # CRC16计算函数（从提供的pg_tool.py中提取）
 def reverse_bits(value: int, bit_width: int = 16) -> int:
@@ -52,72 +65,108 @@ def generate_frame(tag: int, value_length: int, value: List[int]) -> bytes:
 # 串口通信类
 class SerialCommunication:
     def __init__(self, port, baudrate):
-        self.ser = serial.Serial(port, baudrate, timeout=2)  # 增加超时时间
+        self.ser = serial.Serial(port, baudrate, timeout=1)
 
     def send_frame(self, frame: bytes):
         self.ser.write(frame)
-        print(f"发送数据帧: {' '.join(f'{byte:02X}' for byte in frame)}")
-        
-    def receive_frame(self):
+        debug_print(f"发送数据帧: {' '.join(f'{byte:02X}' for byte in frame)}")
+
+    def receive_frame(self) -> Optional[bytes]:
         timeout_counter = 0
-        while self.ser.in_waiting == 0 and timeout_counter < 5:
-            print("等待数据...")
-            time.sleep(0.5)  # 等待 0.5 秒再检查一次
+        while self.ser.in_waiting == 0 and timeout_counter < 10:
+            debug_print("等待数据...")
+            time.sleep(0.2)  # 等待 0.5 秒再检查一次
             timeout_counter += 1
         
         if self.ser.in_waiting > 0:
             response = self.ser.read(self.ser.in_waiting)
-            print(f"接收到数据帧: {' '.join(f'{byte:02X}' for byte in response)}")
+            debug_print(f"接收到数据帧: {' '.join(f'{byte:02X}' for byte in response)}")
             return response
         else:
-            print("接收超时，没有数据。")
+            debug_print("接收超时，没有数据。")
             return None
     
     def close(self):
         self.ser.close()
 
-# 请求连接的函数
-def request_connection(serial_comm: SerialCommunication):
-    # 请求建立连接，发送数据帧
-    data = [0x01]  # 0x01 请求建立连接
-    frame = generate_frame(0x21, len(data), data)
-    print("请求连接数据帧:")
-    print(f"发送数据: {' '.join(f'{byte:02X}' for byte in frame)}")
-    serial_comm.send_frame(frame)
+# 检查接收到的数据帧是否符合协议格式
+def validate_frame(frame: bytes) -> bool:
+    if len(frame) < 8:  # 最小帧长度：HEAD(2) + PAYLOAD LENGTH(2) + LENGTH CHECK(2) + CRC(2)
+        debug_print("数据帧长度不足")
+        return False
 
-    # 等待响应
-    response = serial_comm.receive_frame()
-    if response:
-        print(f"接收到数据: {' '.join(f'{byte:02X}' for byte in response)}")
-        # 解析响应是否为成功应答
-        if response[6] == 0x41:
-            print("连接请求成功，开始握手1。")
-            return True
-        else:
-            print("连接请求失败，响应数据不符合预期。")
-            if response[6] == 0xFF:
-                print("设备拒绝连接请求 (0xFF)。")
+    # 检查协议头
+    head = struct.unpack("<H", frame[0:2])[0]
+    if head != 0x55AA:
+        debug_print(f"协议头错误，期望 0x55AA，实际 {head:#06X}")
+        return False
+
+    # 检查 PAYLOAD LENGTH
+    payload_length = struct.unpack("<H", frame[2:4])[0]
+    if len(frame) != 8 + payload_length:  # HEAD(2) + PAYLOAD LENGTH(2) + LENGTH CHECK(2) + PAYLOAD(n) + CRC(2)
+        debug_print(f"PAYLOAD 长度不匹配，期望 {payload_length}，实际 {len(frame) - 8}")
+        return False
+
+    # 检查 LENGTH CHECK
+    length_check = struct.unpack("<H", frame[4:6])[0]
+    expected_length_check = crc16_ccitt(struct.pack("<H", payload_length))
+    if length_check != expected_length_check:
+        debug_print(f"LENGTH CHECK 错误，期望 {expected_length_check:#06X}，实际 {length_check:#06X}")
+        return False
+
+    # 检查 CRC
+    received_crc = struct.unpack("<H", frame[-2:])[0]
+    expected_crc = crc16_ccitt(frame[:-2])
+    if received_crc != expected_crc:
+        debug_print(f"CRC 校验失败，期望 {expected_crc:#06X}，实际 {received_crc:#06X}")
+        return False
+
+    debug_print("数据帧校验成功")
+    return True
+
+# 发送数据帧并等待响应，支持重试机制
+def send_and_receive(serial_comm: SerialCommunication, frame: bytes, expected_tag: int) -> Tuple[bool, Optional[bytes]]:
+    for retry in range(MAX_RETRIES):
+        serial_comm.send_frame(frame)
+        response = serial_comm.receive_frame()
+        if response and validate_frame(response):
+            if response[6] == expected_tag:
+                return True, response
             else:
-                print(f"未知的响应: {response[6]}")
-    else:
-        print("未收到设备响应。")
-    return False
+                debug_print(f"响应 TAG 不匹配，期望 {expected_tag:#04X}，实际 {response[6]:#04X}")
+        else:
+            debug_print(f"第 {retry + 1} 次重试...")
+            time.sleep(1)  # 等待 1 秒后重试
+    return False, None
+
+# 请求连接的函数
+def request_connection(serial_comm: SerialCommunication) -> bool:
+    while True:
+        # 请求建立连接，发送数据帧
+        data = [0x01]  # 0x01 请求建立连接
+        frame = generate_frame(0x21, len(data), data)
+        debug_print(f"请求连接数据: {' '.join(f'{byte:02X}' for byte in frame)}")
+
+        success, response = send_and_receive(serial_comm, frame, 0x41)
+        if success:
+            debug_print("连接成功")
+            return True
 
 # 握手1的函数
-def handshake_1(serial_comm: SerialCommunication):
+def handshake_1(serial_comm: SerialCommunication) -> Optional[bytes]:
     # 握手1请求，发送数据帧
     data = []  # 无数据，直接请求
     frame = generate_frame(0x22, len(data), data)
-    serial_comm.send_frame(frame)
 
-    # 等待响应
-    response = serial_comm.receive_frame()
-    if response and response[6] == 0x42:
+    success, response = send_and_receive(serial_comm, frame, 0x42)
+    if success:
         handshake_data1 = response[9:13]  # 修改为从 index 9 到 12 提取握手数据1
-        print(f"握手1成功，握手数据1: {handshake_data1.hex()}")
+        debug_print("握手1成功")
+        debug_print(f"握手数据1: {handshake_data1.hex()}")
         return handshake_data1
-    print("握手1失败。")
-    return None
+    else:
+        debug_print("握手1失败。")
+        return None
 
 # 计算握手数据2：SHA256(握手数据1 + passcode)
 def calculate_handshake2(handshake_data1: bytes, passcode: bytes) -> bytes:
@@ -128,141 +177,187 @@ def calculate_handshake2(handshake_data1: bytes, passcode: bytes) -> bytes:
     return sha256_hash
 
 # 握手2的函数
-def handshake_2(serial_comm: SerialCommunication, handshake_data1: bytes, passcode: bytes):
+def handshake_2(serial_comm: SerialCommunication, handshake_data1: bytes, passcode: bytes) -> bool:
     # 计算握手数据2：SHA256(握手数据1 + passcode)
     handshake_data2 = calculate_handshake2(handshake_data1, passcode)
-    print(f"握手数据2: {handshake_data2.hex()}")
+    debug_print(f"握手数据2: {handshake_data2.hex()}")
 
     # 握手2请求，发送数据帧
     frame = generate_frame(0x23, len(handshake_data2), list(handshake_data2))
-    serial_comm.send_frame(frame)
 
-    # 等待响应
-    response = serial_comm.receive_frame()
-    if response and response[6] == 0x43:
+    success, response = send_and_receive(serial_comm, frame, 0x43)
+    if success:
         if response[9] == 0x00:
-            print("握手2成功。")
+            debug_print("握手2成功")
             return True
         else:
-            print("握手2失败。")
+            debug_print("握手2失败。")
             return False
-    print("握手2响应失败。")
-    return False
+    else:
+        debug_print("握手2响应失败。")
+        return False
 
 # 擦除flash区域的函数
-def erase_flash(serial_comm: SerialCommunication, start_address: int, size: int):
+def erase_flash(serial_comm: SerialCommunication, start_address: int, size: int) -> bool:
     erase_size = max(size, SECTOR_SIZE)
     # 擦除命令：起始地址 + 擦除大小
     data = struct.pack("<I", start_address) + struct.pack("<I", erase_size)
     frame = generate_frame(0x24, len(data), list(data))
-    serial_comm.send_frame(frame)
-    print(f"擦除地址 {start_address:#010x}, 大小 {erase_size:#010x}")
 
-    # 等待擦除响应
-    response = serial_comm.receive_frame()
-    if response and response[6] == 0x44 and response[9] == 0x00:
-        print(f"擦除成功")
+    success, response = send_and_receive(serial_comm, frame, 0x44)
+    if success and response[9] == 0x00:
+        debug_print(f"擦除成功")
+        return True
     else:
-        print(f"擦除失败")
+        debug_print(f"擦除失败")
         return False
-    return True
 
 # 写入flash数据的函数
-def write_flash(serial_comm: SerialCommunication, start_address: int, size: int, data: bytes):
+def write_flash(serial_comm: SerialCommunication, start_address: int, size: int, data: bytes) -> bool:
     offset = 0
     write_addr = start_address + offset
-    while offset < size:
-        if size - offset >= SECTOR_SIZE:
-            chunk = data[offset:offset + SECTOR_SIZE]
-        else:
-            chunk = data[offset:offset + (size - offset)]
-        # 将数据打包并发送
-        data_to_send = struct.pack("<I", write_addr) + struct.pack("<H", len(chunk)) + bytes(chunk)
-        frame = generate_frame(0x25, len(data_to_send), list(data_to_send))
-        serial_comm.send_frame(frame)
-        print(f"写入地址 {write_addr:#010x}, 数据大小 {len(chunk)}")
+    total_size = size  # 总数据大小
+    with tqdm(total=total_size, unit='B', unit_scale=True, desc="写入进度") as pbar:  # 使用 tqdm 创建进度条
+        while offset < size:
+            if size - offset >= SECTOR_SIZE:
+                chunk = data[offset:offset + SECTOR_SIZE]
+            else:
+                chunk = data[offset:offset + (size - offset)]
+            # 将数据打包并发送
+            data_to_send = struct.pack("<I", write_addr) + struct.pack("<H", len(chunk)) + bytes(chunk)
+            frame = generate_frame(0x25, len(data_to_send), list(data_to_send))
 
-        # 等待写入响应
-        response = serial_comm.receive_frame()
-        if response and response[6] == 0x45 and response[9] == 0x00:
-            print(f"写入成功，地址 {write_addr:#010x}")
-            # 更新偏移量和写入地址
-            offset += len(chunk)
-            write_addr += len(chunk)
-        else:
-            print(f"写入失败，地址 {write_addr:#010x}")
-            return False
+            success, response = send_and_receive(serial_comm, frame, 0x45)
+            if success and response[9] == 0x00:
+                debug_print(f"写入成功，地址 {write_addr:#010x}")
+                # 更新偏移量和写入地址
+                offset += len(chunk)
+                write_addr += len(chunk)
+                pbar.update(len(chunk))  # 更新进度条
+            else:
+                debug_print(f"写入失败，地址 {write_addr:#010x}")
+                return False
     return True
 
 # 复位芯片的函数
-def reset_chip(serial_comm: SerialCommunication):
+def reset_chip(serial_comm: SerialCommunication) -> bool:
     # 复位命令，无数据
     frame = generate_frame(0x27, 0, [])
-    serial_comm.send_frame(frame)
-    print("发送复位芯片命令")
 
-    # 等待复位响应
-    response = serial_comm.receive_frame()
-    if response and response[6] == 0x47:
-        if response[9] == 0x00:
-            print("复位芯片成功")
-            return True
+    success, response = send_and_receive(serial_comm, frame, 0x47)
+    if success and response[9] == 0x00:
+        debug_print("复位芯片成功")
+        return True
+    else:
+        debug_print("复位芯片失败")
+        return False
+
+def process_flash_operations(serial_comm, segments, passcode, hex_data):
+    print("请求连接")
+    if request_connection(serial_comm):
+        print("连接成功")
+    else:
+        print("连接失败")
+        return False
+
+    handshake_data1 = handshake_1(serial_comm)
+    if handshake_data1:
+        print("握手1成功")
+    else:
+        print("握手1失败")
+        return False
+
+    if handshake_2(serial_comm, handshake_data1, passcode):
+        print("握手2成功")
+    else:
+        print("握手2失败")
+        return False
+
+    for start, stop in segments:
+        size = stop - start
+        if erase_flash(serial_comm, start, size):
+            print(f"地址 {start:#010x} - {stop:#010x} 擦除成功")
         else:
-            print("复位芯片失败")
+            print(f"地址 {start:#010x} - {stop:#010x} 擦除失败")
             return False
-    print("复位芯片响应失败")
-    return False
+        
+        if write_flash(serial_comm, start, size, hex_data.tobinarray(start, stop)):
+            print(f"地址 {start:#010x} - {stop:#010x} 写入成功")
+        else:
+            print(f"地址 {start:#010x} - {stop:#010x} 写入失败")
+            return False
+    
+    if reset_chip(serial_comm):
+        print("复位芯片成功")
+    else:
+        print("复位芯片失败")
+        return False
+    
+    print("所有操作成功完成")
+    return True
 
 # 主函数
 def main():
-    # 设置串口连接
-    port = "COM4"  # 这里根据实际的串口端口进行修改
-    baudrate = 115200
-    serial_comm = SerialCommunication(port, baudrate)
+    # 使用 argparse 解析命令行参数
+    parser = argparse.ArgumentParser(description="EZBOOT Programmer")
+    parser.add_argument("port", type=str, help="串口端口 (例如: COM4 或 /dev/ttyUSB0)")
+    parser.add_argument("hex_file", type=str, help="要烧写的 HEX 文件路径")
+    parser.add_argument("passcode", type=str, help="passcode (例如: 010203040506)")
+    parser.add_argument("--baudrate", type=int, default=115200, help="串口波特率 (默认: 115200)")
+    args = parser.parse_args()
 
-    # 设置默认 passcode (HEX: 01 02 03 04 05 06)
-    passcode = bytes([0x01, 0x02, 0x03, 0x04, 0x05, 0x06])
+    # 设置串口连接
+    port = args.port
+    baudrate = args.baudrate
+    try:
+        serial_comm = SerialCommunication(port, baudrate)
+    except serial.SerialException as e:
+        print(f"无法打开串口 {port}: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    # 解析 passcode
+    try:
+        passcode = bytes.fromhex(args.passcode)
+    except ValueError:
+        print("无效的 passcode 格式，应为十六进制字符串", file=sys.stderr)
+        sys.exit(1)
 
     # 设置烧写的 hex 文件
-    hex_file = "firmware.hex"  # 请根据实际路径调整
+    hex_file = args.hex_file
 
     # 读取 Intel Hex 文件
-    hex_data = IntelHex(hex_file)
+    try:
+        hex_data = IntelHex(hex_file)
+    except FileNotFoundError:
+        print(f"找不到文件: {hex_file}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"读取 HEX 文件时出错: {e}", file=sys.stderr)
+        sys.exit(1)
 
     # 获取所有的数据段（段的起始地址和结束地址）
     segments = list(hex_data.segments())
 
     # 打印出所有的段及其大小
     if segments:
-        print("Hex 文件包含数据段：")
+        debug_print("Hex 文件包含数据段：")
         for start, stop in segments:
             size = stop - start
-            print(f"地址段: {start:#010x} - {stop:#010x}, 数据大小: {size} 字节")
+            debug_print(f"地址段: {start:#010x} - {stop:#010x}, 数据大小: {size} 字节")
     else:
         print("Hex 文件不包含任何数据段。")
+        sys.exit(1)  # 如果没有数据段，认为是错误
 
     try:
-        # 请求连接
-        if request_connection(serial_comm):
-            # 握手1
-            handshake_data1 = handshake_1(serial_comm)
-            if handshake_data1:
-                # 握手2
-                if handshake_2(serial_comm, handshake_data1, passcode):
-                    for start, stop in segments:
-                        size = stop - start
-                        # 擦除指定区域
-                        if erase_flash(serial_comm, start, size):
-                            # 写入 hex 文件数据
-                            if write_flash(serial_comm, start, size, hex_data.tobinarray(start, stop)):
-                                 # 写入成功后复位芯片
-                                if reset_chip(serial_comm):
-                                    print("固件编程成功，芯片已复位")
-                                else:
-                                    print("固件编程成功，但复位芯片失败")
+        if not process_flash_operations(serial_comm, segments, passcode, hex_data):
+            print("操作过程中遇到错误")
+            sys.exit(1)  # 返回非零状态码表示失败
     finally:
         # 关闭串口
         serial_comm.close()
+    
+    # 成功完成所有操作
+    sys.exit(0)
 
 if __name__ == "__main__":
     main()
