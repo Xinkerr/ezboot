@@ -23,6 +23,9 @@ python -m pip install pycryptodome
 echo installing chardet...
 python -m pip install chardet
 
+echo installing pyserial...
+python -m pip install pyserial
+
 :: 安装完成
 echo compelet
 pause

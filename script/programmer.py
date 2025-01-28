@@ -3,6 +3,11 @@ import struct
 import time
 import hashlib
 from typing import List
+from intelhex import IntelHex  # 用于解析 Intel Hex 文件
+import os
+
+# STM32F103的扇区大小（4KB）
+SECTOR_SIZE = 0x1000  # 4KB
 
 # CRC16计算函数（从提供的pg_tool.py中提取）
 def reverse_bits(value: int, bit_width: int = 16) -> int:
@@ -144,15 +149,97 @@ def handshake_2(serial_comm: SerialCommunication, handshake_data1: bytes, passco
     print("握手2响应失败。")
     return False
 
+# 擦除flash区域的函数
+def erase_flash(serial_comm: SerialCommunication, start_address: int, size: int):
+    erase_size = max(size, SECTOR_SIZE)
+    # 擦除命令：起始地址 + 擦除大小
+    data = struct.pack("<I", start_address) + struct.pack("<I", erase_size)
+    frame = generate_frame(0x24, len(data), list(data))
+    serial_comm.send_frame(frame)
+    print(f"擦除地址 {start_address:#010x}, 大小 {erase_size:#010x}")
+
+    # 等待擦除响应
+    response = serial_comm.receive_frame()
+    if response and response[6] == 0x44 and response[9] == 0x00:
+        print(f"擦除成功")
+    else:
+        print(f"擦除失败")
+        return False
+    return True
+
+# 写入flash数据的函数
+def write_flash(serial_comm: SerialCommunication, start_address: int, size: int, data: bytes):
+    offset = 0
+    write_addr = start_address + offset
+    while offset < size:
+        if size - offset >= SECTOR_SIZE:
+            chunk = data[offset:offset + SECTOR_SIZE]
+        else:
+            chunk = data[offset:offset + (size - offset)]
+        # 将数据打包并发送
+        data_to_send = struct.pack("<I", write_addr) + struct.pack("<H", len(chunk)) + bytes(chunk)
+        frame = generate_frame(0x25, len(data_to_send), list(data_to_send))
+        serial_comm.send_frame(frame)
+        print(f"写入地址 {write_addr:#010x}, 数据大小 {len(chunk)}")
+
+        # 等待写入响应
+        response = serial_comm.receive_frame()
+        if response and response[6] == 0x45 and response[9] == 0x00:
+            print(f"写入成功，地址 {write_addr:#010x}")
+            # 更新偏移量和写入地址
+            offset += len(chunk)
+            write_addr += len(chunk)
+        else:
+            print(f"写入失败，地址 {write_addr:#010x}")
+            return False
+    return True
+
+# 复位芯片的函数
+def reset_chip(serial_comm: SerialCommunication):
+    # 复位命令，无数据
+    frame = generate_frame(0x27, 0, [])
+    serial_comm.send_frame(frame)
+    print("发送复位芯片命令")
+
+    # 等待复位响应
+    response = serial_comm.receive_frame()
+    if response and response[6] == 0x47:
+        if response[9] == 0x00:
+            print("复位芯片成功")
+            return True
+        else:
+            print("复位芯片失败")
+            return False
+    print("复位芯片响应失败")
+    return False
+
 # 主函数
 def main():
     # 设置串口连接
-    port = "COM3"  # 这里根据实际的串口端口进行修改
+    port = "COM4"  # 这里根据实际的串口端口进行修改
     baudrate = 115200
     serial_comm = SerialCommunication(port, baudrate)
 
     # 设置默认 passcode (HEX: 01 02 03 04 05 06)
     passcode = bytes([0x01, 0x02, 0x03, 0x04, 0x05, 0x06])
+
+    # 设置烧写的 hex 文件
+    hex_file = "firmware.hex"  # 请根据实际路径调整
+
+    # 读取 Intel Hex 文件
+    hex_data = IntelHex(hex_file)
+
+    # 获取所有的数据段（段的起始地址和结束地址）
+    segments = list(hex_data.segments())
+
+    # 打印出所有的段及其大小
+    if segments:
+        print("Hex 文件包含数据段：")
+        for start, stop in segments:
+            size = stop - start
+            print(f"地址段: {start:#010x} - {stop:#010x}, 数据大小: {size} 字节")
+    else:
+        print("Hex 文件不包含任何数据段。")
 
     try:
         # 请求连接
@@ -161,7 +248,18 @@ def main():
             handshake_data1 = handshake_1(serial_comm)
             if handshake_data1:
                 # 握手2
-                handshake_2(serial_comm, handshake_data1, passcode)
+                if handshake_2(serial_comm, handshake_data1, passcode):
+                    for start, stop in segments:
+                        size = stop - start
+                        # 擦除指定区域
+                        if erase_flash(serial_comm, start, size):
+                            # 写入 hex 文件数据
+                            if write_flash(serial_comm, start, size, hex_data.tobinarray(start, stop)):
+                                 # 写入成功后复位芯片
+                                if reset_chip(serial_comm):
+                                    print("固件编程成功，芯片已复位")
+                                else:
+                                    print("固件编程成功，但复位芯片失败")
     finally:
         # 关闭串口
         serial_comm.close()
