@@ -62,33 +62,6 @@ def generate_frame(tag: int, value_length: int, value: List[int]) -> bytes:
     frame = frame_without_crc + struct.pack("<H", crc)
     return frame
 
-# 串口通信类
-class SerialCommunication:
-    def __init__(self, port, baudrate):
-        self.ser = serial.Serial(port, baudrate, timeout=1)
-
-    def send_frame(self, frame: bytes):
-        self.ser.write(frame)
-        debug_print(f"发送数据帧: {' '.join(f'{byte:02X}' for byte in frame)}")
-
-    def receive_frame(self) -> Optional[bytes]:
-        timeout_counter = 0
-        while self.ser.in_waiting == 0 and timeout_counter < 10:
-            debug_print("等待数据...")
-            time.sleep(0.2)  # 等待 0.5 秒再检查一次
-            timeout_counter += 1
-        
-        if self.ser.in_waiting > 0:
-            response = self.ser.read(self.ser.in_waiting)
-            debug_print(f"接收到数据帧: {' '.join(f'{byte:02X}' for byte in response)}")
-            return response
-        else:
-            debug_print("接收超时，没有数据。")
-            return None
-    
-    def close(self):
-        self.ser.close()
-
 # 检查接收到的数据帧是否符合协议格式
 def validate_frame(frame: bytes) -> bool:
     if len(frame) < 8:  # 最小帧长度：HEAD(2) + PAYLOAD LENGTH(2) + LENGTH CHECK(2) + CRC(2)
@@ -103,9 +76,9 @@ def validate_frame(frame: bytes) -> bool:
 
     # 检查 PAYLOAD LENGTH
     payload_length = struct.unpack("<H", frame[2:4])[0]
-    if len(frame) != 8 + payload_length:  # HEAD(2) + PAYLOAD LENGTH(2) + LENGTH CHECK(2) + PAYLOAD(n) + CRC(2)
-        debug_print(f"PAYLOAD 长度不匹配，期望 {payload_length}，实际 {len(frame) - 8}")
-        return False
+    # if len(frame) != 8 + payload_length:  # HEAD(2) + PAYLOAD LENGTH(2) + LENGTH CHECK(2) + PAYLOAD(n) + CRC(2)
+    #     debug_print(f"PAYLOAD 长度不匹配，期望 {payload_length}，实际 {len(frame) - 8}")
+    #     return False
 
     # 检查 LENGTH CHECK
     length_check = struct.unpack("<H", frame[4:6])[0]
@@ -115,8 +88,8 @@ def validate_frame(frame: bytes) -> bool:
         return False
 
     # 检查 CRC
-    received_crc = struct.unpack("<H", frame[-2:])[0]
-    expected_crc = crc16_ccitt(frame[:-2])
+    received_crc = struct.unpack("<H", frame[payload_length+6:payload_length+8])[0]
+    expected_crc = crc16_ccitt(frame[:payload_length+6])
     if received_crc != expected_crc:
         debug_print(f"CRC 校验失败，期望 {expected_crc:#06X}，实际 {received_crc:#06X}")
         return False
@@ -124,12 +97,58 @@ def validate_frame(frame: bytes) -> bool:
     debug_print("数据帧校验成功")
     return True
 
+# 串口通信类
+class SerialCommunication:
+    def __init__(self, port, baudrate):
+        self.ser = serial.Serial(port, baudrate, timeout=1)
+
+    def send_frame(self, frame: bytes):
+        self.ser.write(frame)
+        debug_print(f"发送数据帧: {' '.join(f'{byte:02X}' for byte in frame)}")
+
+    def receive_frame(self) -> Optional[bytes]:
+        timeout_counter = 0
+        while timeout_counter < 10:
+            while self.ser.in_waiting == 0 and timeout_counter < 10:
+                debug_print("等待数据...")
+                time.sleep(0.2)  # 等待 0.5 秒再检查一次
+                timeout_counter += 1
+            
+            if self.ser.in_waiting > 0:
+                data = self.ser.read(self.ser.in_waiting)
+                debug_print(f"接收到数据帧: {' '.join(f'{byte:02X}' for byte in data)}")
+                index = 0
+                while len(data) - index >= 2:  # 确保剩余数据至少有两个字节可以形成协议头
+                    index = data.find(b'\xaa\x55', index)
+                    if index != -1:
+                        debug_print(f"找到协议头，位置在: {index}")
+                        # 检查是否有足够的数据来构成一个完整的帧
+                        if len(data) - index < 8:  # 假设最短有效帧为8字节
+                            debug_print("数据不足，无法构成完整帧")
+                            break  # 或者可以选择等待更多数据
+                        protocol_data = data[index:]
+                        debug_print(f"接收到协议数据: {' '.join(f'{byte:02X}' for byte in protocol_data)}")
+                        if validate_frame(protocol_data):
+                            return protocol_data
+                        else:
+                            index += 1  # 跳过当前协议头的第一个字节，尝试寻找下一个可能的协议头
+                    else:
+                        debug_print("未找到协议头")
+                        break
+            else:
+                debug_print("接收超时，没有数据。")
+                return None
+    
+    def close(self):
+        self.ser.close()
+
 # 发送数据帧并等待响应，支持重试机制
 def send_and_receive(serial_comm: SerialCommunication, frame: bytes, expected_tag: int) -> Tuple[bool, Optional[bytes]]:
     for retry in range(MAX_RETRIES):
         serial_comm.send_frame(frame)
         response = serial_comm.receive_frame()
-        if response and validate_frame(response):
+        # if response and validate_frame(response):
+        if response:
             if response[6] == expected_tag:
                 return True, response
             else:
@@ -275,16 +294,17 @@ def process_flash_operations(serial_comm, segments, passcode, hex_data):
 
     for start, stop in segments:
         size = stop - start
+        print(f"地址 {start:#010x} - {stop:#010x}")
         if erase_flash(serial_comm, start, size):
-            print(f"地址 {start:#010x} - {stop:#010x} 擦除成功")
+            print("擦除成功")
         else:
-            print(f"地址 {start:#010x} - {stop:#010x} 擦除失败")
+            print("擦除失败")
             return False
         
         if write_flash(serial_comm, start, size, hex_data.tobinarray(start, stop)):
-            print(f"地址 {start:#010x} - {stop:#010x} 写入成功")
+            print("写入成功")
         else:
-            print(f"地址 {start:#010x} - {stop:#010x} 写入失败")
+            print("写入失败")
             return False
     
     if reset_chip(serial_comm):
