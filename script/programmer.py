@@ -8,7 +8,6 @@ from typing import List, Optional, Tuple
 from intelhex import IntelHex  # 用于解析 Intel Hex 文件
 from tqdm import tqdm  # 导入 tqdm 库用于进度条
 
-# STM32F103的扇区大小（4KB）
 SECTOR_SIZE = 0x1000  # 4KB
 
 # 最大重试次数
@@ -16,6 +15,8 @@ MAX_RETRIES = 3
 
 # 增加调试开关，默认关闭
 DEBUG = False
+
+PG_HEAD = b'\xaa\x55'
 
 def debug_print(*args, **kwargs):
     """根据 DEBUG 变量的状态决定是否打印调试信息"""
@@ -76,9 +77,9 @@ def validate_frame(frame: bytes) -> bool:
 
     # 检查 PAYLOAD LENGTH
     payload_length = struct.unpack("<H", frame[2:4])[0]
-    # if len(frame) != 8 + payload_length:  # HEAD(2) + PAYLOAD LENGTH(2) + LENGTH CHECK(2) + PAYLOAD(n) + CRC(2)
-    #     debug_print(f"PAYLOAD 长度不匹配，期望 {payload_length}，实际 {len(frame) - 8}")
-    #     return False
+    if len(frame) < 8 + payload_length:  # HEAD(2) + PAYLOAD LENGTH(2) + LENGTH CHECK(2) + PAYLOAD(n) + CRC(2)
+        debug_print(f"PAYLOAD 长度不匹配，期望 {payload_length}，实际 {len(frame) - 8}")
+        return False
 
     # 检查 LENGTH CHECK
     length_check = struct.unpack("<H", frame[4:6])[0]
@@ -106,20 +107,19 @@ class SerialCommunication:
         self.ser.write(frame)
         debug_print(f"发送数据帧: {' '.join(f'{byte:02X}' for byte in frame)}")
 
-    def receive_frame(self) -> Optional[bytes]:
-        timeout_counter = 0
-        while timeout_counter < 10:
-            while self.ser.in_waiting == 0 and timeout_counter < 10:
+    def receive_frame(self, timeout_seconds: float = 2.0) -> Optional[bytes]:
+        start_time = time.time()
+        while time.time() - start_time < timeout_seconds:
+            while self.ser.in_waiting == 0 and time.time() - start_time < timeout_seconds:
                 debug_print("等待数据...")
-                time.sleep(0.2)  # 等待 0.5 秒再检查一次
-                timeout_counter += 1
+                time.sleep(0.05)  # 等待 50ms 再检查一次
             
             if self.ser.in_waiting > 0:
                 data = self.ser.read(self.ser.in_waiting)
                 debug_print(f"接收到数据帧: {' '.join(f'{byte:02X}' for byte in data)}")
                 index = 0
                 while len(data) - index >= 2:  # 确保剩余数据至少有两个字节可以形成协议头
-                    index = data.find(b'\xaa\x55', index)
+                    index = data.find(PG_HEAD, index)
                     if index != -1:
                         debug_print(f"找到协议头，位置在: {index}")
                         # 检查是否有足够的数据来构成一个完整的帧
@@ -143,10 +143,10 @@ class SerialCommunication:
         self.ser.close()
 
 # 发送数据帧并等待响应，支持重试机制
-def send_and_receive(serial_comm: SerialCommunication, frame: bytes, expected_tag: int) -> Tuple[bool, Optional[bytes]]:
+def send_and_receive(serial_comm: SerialCommunication, send_frame: bytes, expected_tag: int, timeout_seconds: float = 2.0) -> Tuple[bool, Optional[bytes]]:
     for retry in range(MAX_RETRIES):
-        serial_comm.send_frame(frame)
-        response = serial_comm.receive_frame()
+        serial_comm.send_frame(send_frame)
+        response = serial_comm.receive_frame(timeout_seconds)
         # if response and validate_frame(response):
         if response:
             if response[6] == expected_tag:
@@ -163,10 +163,10 @@ def request_connection(serial_comm: SerialCommunication) -> bool:
     while True:
         # 请求建立连接，发送数据帧
         data = [0x01]  # 0x01 请求建立连接
-        frame = generate_frame(0x21, len(data), data)
-        debug_print(f"请求连接数据: {' '.join(f'{byte:02X}' for byte in frame)}")
+        send_frame = generate_frame(0x21, len(data), data)
+        debug_print(f"请求连接数据: {' '.join(f'{byte:02X}' for byte in send_frame)}")
 
-        success, response = send_and_receive(serial_comm, frame, 0x41)
+        success, response = send_and_receive(serial_comm, send_frame, 0x41, 0.1)
         if success:
             debug_print("连接成功")
             return True
