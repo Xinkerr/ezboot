@@ -18,9 +18,10 @@
  * 索赔、损害或其他责任负责，无论是合同诉讼、侵权行为还是其他情况。
  */
 
+#include <ezboot_config.h>
+#if CONFIG_PROGRAMMING_SUPPORT && CONFIG_PG_UART_USE
 #include <stdint.h>
 #include <mcu_header.h>
-#include <ezboot_config.h>
 #include <pg_uart_drv.h>
 #include <ringbuffer.h>
 
@@ -48,3 +49,5 @@ inline uint16_t pg_uart_drv_get(uint8_t* pdata, uint16_t len)
 {
     return ringbuffer_get(&pg_recv_rb, pdata, len);
 }
+
+#endif

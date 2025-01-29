@@ -21,6 +21,9 @@
 #ifndef __PG_UART_DRV_H__
 #define __PG_UART_DRV_H__
 
+#include <ezboot_config.h>
+
+#if CONFIG_PROGRAMMING_SUPPORT && CONFIG_PG_UART_USE
 #include <pg_uart.h>
 
 /**
@@ -55,5 +58,7 @@ void pg_uart_drv_send(const void* pdata, uint16_t len);
  * @return    实际获取数据的长度
  */
 uint16_t pg_uart_drv_get(uint8_t* pdata, uint16_t len);
+
+#endif
 
 #endif

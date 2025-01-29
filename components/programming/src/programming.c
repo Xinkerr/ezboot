@@ -18,12 +18,13 @@
  * 索赔、损害或其他责任负责，无论是合同诉讼、侵权行为还是其他情况。
  */
 
+#include <ezboot_config.h>
+#if CONFIG_PROGRAMMING_SUPPORT
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
 #include <mcu_header.h>
 #include <boot.h>
-#include <ezboot_config.h>
 #include <pg_uart_drv.h>
 #include <tlv.h>
 #include <programming.h>
@@ -510,3 +511,4 @@ static int pg_shake2_handler(uint8_t* value_data, uint16_t len)
     
     return ret;
 }
+#endif

@@ -69,14 +69,14 @@
 
 
 //=================================================================BOOT=================================================================================
-#define CONFIG_PROGRAMMING_SUPPORT                  1
-#define CONFIG_PG_UART_USE                          1
+#define CONFIG_PROGRAMMING_SUPPORT                  0
+#define CONFIG_PG_UART_USE                          0
 #define CONFIG_PG_UART_RB_SIZE                      5000
-#define CONFIG_PG_RECV_BUF_SIZE											5000
-#define CONFIG_WAIT_TIME_FOR_PG                     5000    
+#define CONFIG_PG_RECV_BUF_SIZE					    5000
+#define CONFIG_WAIT_TIME_FOR_PG                     700    
 //LOG UART
-#define CONFIG_LOG_UART_BAUDRATE            115200
-#define CONFIG_LOG_LEVEL                    0 //LEVEL INF
-#define CONFIG_TEST							0
+#define CONFIG_LOG_UART_BAUDRATE                    115200
+#define CONFIG_LOG_LEVEL                            3 //LEVEL INF
+#define CONFIG_TEST							        0
 
 #endif

@@ -21,7 +21,12 @@
 #ifndef __PROGRAMMING_H__
 #define __PROGRAMMING_H__
 
+#include <ezboot_config.h>
+
+#if CONFIG_PROGRAMMING_SUPPORT
 
 void programming_process(void);
+
+#endif
 
 #endif
