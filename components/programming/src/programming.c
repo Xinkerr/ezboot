@@ -159,11 +159,12 @@ static int pg_protocol_recv(void)
         uint16_t check_crc;
         int tlv_ret;
         crc_res = crc16_ccitt(0, recv_buf+2, 2);
-        check_crc = *(uint16_t*)(recv_buf+4);
+        memcpy(&check_crc, recv_buf+4, sizeof(check_crc));
         //payload length校验
         if(crc_res == check_crc)
         {
-            uint16_t payload_len = *(uint16_t*)(recv_buf+2);
+            uint16_t payload_len;
+            memcpy(&payload_len, recv_buf+2, sizeof(payload_len));
             uint8_t* payload_ptr = recv_buf+6;
             //[head size] + [length size] + [length check size] + [payload size] + [crc size]
             uint16_t sum_size = payload_len + 8; 
@@ -172,7 +173,7 @@ static int pg_protocol_recv(void)
             {
                 //整帧数据的CRC校验
                 crc_res = crc16_ccitt(0, recv_buf, payload_len+6);
-                check_crc = *(uint16_t*)(payload_ptr+payload_len);
+                memcpy(&check_crc, payload_ptr+payload_len, sizeof(check_crc));
                 //payload data校验
                 if(crc_res == check_crc)
                 {

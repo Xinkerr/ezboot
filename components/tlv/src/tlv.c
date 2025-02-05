@@ -19,7 +19,8 @@ int tlv_parse(tlv_t* tlv, uint8_t* pdata, uint16_t pdata_size)
     {
         if(pdata[0] == tlv_table[i].tag)
         {
-            tlv_len_t len = *(tlv_len_t*)(pdata+TAG_SIZE);
+            tlv_len_t len;
+            memcpy(&len, pdata + TAG_SIZE, sizeof(tlv_len_t));
             if(len > pdata_size-(TAG_SIZE+LEN_SIZE))
                 return TLV_DATA_INCOMPLETE;
             
