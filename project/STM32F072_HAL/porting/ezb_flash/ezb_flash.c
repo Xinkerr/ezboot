@@ -39,6 +39,8 @@ int ezb_flash_erase(uint32_t addr, uint32_t size) {
 
     // 计算页数
     numberOfPages = size / FLASH_PAGE_SIZE;
+    if(size % FLASH_PAGE_SIZE)
+        numberOfPages ++;
 
     // 配置擦除结构
     eraseInitStruct.TypeErase = FLASH_TYPEERASE_PAGES;
