@@ -1,0 +1,5 @@
+intelhex
+pycryptodome
+chardet
+pyserial
+tqdm
