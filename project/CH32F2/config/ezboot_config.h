@@ -28,6 +28,9 @@
 #define CONFIG_OTA_IMAGE_AES_KEY            {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10}
 #define CONFIG_OTA_IMAGE_AES_IV             {0x10, 0x0f, 0x0e, 0x0d, 0x0c, 0x0b, 0x0a, 0x09, 0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01}
 
+//Programming Protocol
+#define CONFIG_PG_PASSCODE                  {0x01, 0x02, 0x03, 0x04, 0x05, 0x06}
+
 //NORFLASH config
 // #define CONFIG_NORFLASH_CMD_SECTOR_ERASE    0x20
 // #define CONFIG_NORFLASH_ERASE_SIZE          4096
@@ -65,9 +68,14 @@
 
 
 //=================================================================BOOT=================================================================================
+#define CONFIG_PROGRAMMING_SUPPORT                  0
+#define CONFIG_PG_UART_USE                          0
+#define CONFIG_PG_UART_RB_SIZE                      5000
+#define CONFIG_PG_RECV_BUF_SIZE					    5000
+#define CONFIG_WAIT_TIME_FOR_PG                     800    
 //LOG UART
-#define CONFIG_LOG_UART_BAUDRATE            115200
-#define CONFIG_LOG_LEVEL                    3 //LEVEL INF
+#define CONFIG_LOG_UART_BAUDRATE                    115200
+#define CONFIG_LOG_LEVEL                            3 //LEVEL INF
 #define CONFIG_TEST							            0
 
 #endif

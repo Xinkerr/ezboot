@@ -10,6 +10,7 @@
 * microcontroller manufactured by Nanjing Qinheng Microelectronics.
 *******************************************************************************/
 #include "ch32f20x_it.h"
+#include <systick.h>
 
 
 /*********************************************************************
@@ -133,8 +134,6 @@ void PendSV_Handler(void)
  */
 void SysTick_Handler(void)
 {
-  while (1)
-  {
-  }	
+  systick_counter();
 }
 

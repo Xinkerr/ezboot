@@ -276,7 +276,7 @@
               <OCR_RVCT4>
                 <Type>1</Type>
                 <StartAddress>0x8000000</StartAddress>
-                <Size>0x3000</Size>
+                <Size>0x4000</Size>
               </OCR_RVCT4>
               <OCR_RVCT5>
                 <Type>1</Type>
@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>.\SRC\StdPeriphDriver\inc;.\SRC\CMSIS;.\chip;..\..\components\mlog\inc;..\..\components\boot\inc;..\..\components\ota_mgr\inc;..\..\components\sfud\inc;..\..\components\ota\inc;.\config;.\porting\mcu_header;..\..\components\crypt\inc;..\..\components\ezb_flash\inc;..\..\components\norflash\inc</IncludePath>
+              <IncludePath>.\SRC\StdPeriphDriver\inc;.\SRC\CMSIS;.\chip;..\..\components\mlog\inc;..\..\components\boot\inc;..\..\components\ota_mgr\inc;..\..\components\sfud\inc;..\..\components\ota\inc;.\config;.\porting\mcu_header;..\..\components\crypt\inc;..\..\components\ezb_flash\inc;..\..\components\norflash\inc;..\..\components\programming\inc;..\..\components\ringbuffer\inc;..\..\components\sys\inc;..\..\components\tlv\inc;..\CH32F2</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -402,6 +402,16 @@
               <FileName>ezboot_config.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\config\ezboot_config.h</FilePath>
+            </File>
+            <File>
+              <FileName>systick.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\systick.c</FilePath>
+            </File>
+            <File>
+              <FileName>systick.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\systick.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -628,6 +638,26 @@
               <FileType>1</FileType>
               <FilePath>..\..\components\norflash\src\norflash.c</FilePath>
             </File>
+            <File>
+              <FileName>pg_uart_drv.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\components\programming\src\pg_uart_drv.c</FilePath>
+            </File>
+            <File>
+              <FileName>programming.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\components\programming\src\programming.c</FilePath>
+            </File>
+            <File>
+              <FileName>ringbuffer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\components\ringbuffer\src\ringbuffer.c</FilePath>
+            </File>
+            <File>
+              <FileName>tlv.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\components\tlv\src\tlv.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -647,6 +677,16 @@
               <FileName>norflash_spi.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\porting\norflash\norflash_spi.c</FilePath>
+            </File>
+            <File>
+              <FileName>uptime.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\porting\sys\uptime.c</FilePath>
+            </File>
+            <File>
+              <FileName>pg_uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\porting\programming\pg_uart.c</FilePath>
             </File>
           </Files>
         </Group>
