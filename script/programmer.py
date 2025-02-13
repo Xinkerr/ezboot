@@ -13,6 +13,8 @@ SECTOR_SIZE = 0x1000  # 4KB
 # 最大重试次数
 MAX_RETRIES = 3
 
+WRITE_TIMEOUT = 5.0
+
 # 增加调试开关，默认关闭
 DEBUG = False
 
@@ -246,7 +248,7 @@ def write_flash(serial_comm: SerialCommunication, start_address: int, size: int,
             data_to_send = struct.pack("<I", write_addr) + struct.pack("<H", len(chunk)) + bytes(chunk)
             frame = generate_frame(0x25, len(data_to_send), list(data_to_send))
 
-            success, response = send_and_receive(serial_comm, frame, 0x45)
+            success, response = send_and_receive(serial_comm, frame, 0x45, WRITE_TIMEOUT)
             if success and response[9] == 0x00:
                 debug_print(f"写入成功，地址 {write_addr:#010x}")
                 # 更新偏移量和写入地址
