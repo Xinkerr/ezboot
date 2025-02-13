@@ -327,9 +327,15 @@ static int pg_reset_handler(uint8_t* value_data, uint16_t len)
     tlv_len = tlv_add(payload_buf, RESET_RESP_TAG, 1, &response_result);
     send_len = pg_protocol_format(send_buf, payload_buf, tlv_len);
     pg_drv_send(send_buf, send_len);
-
-    mlog_i("reset chip");
-    reboot();
+    
+	uint32_t last = sys_uptime_get();
+	uint32_t current = sys_uptime_get();
+	while(current - last < 5)
+	{
+		current = sys_uptime_get();
+	}
+	mlog_i("reset chip");
+	reboot();
     return 0;
 }
 
