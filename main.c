@@ -1,4 +1,7 @@
 /**
+ * 
+ * Copyright (c) 2025 Xinkerr
+ * 
  * SPDX-License-Identifier: Apache-2.0
  *
  * Disclaimer / 免责声明
@@ -23,6 +26,9 @@
 #include <ota_mgr.h>
 #if OTA_MGR_EXTERN_FLASH | OTA_IMAGE_EXTERN_FLASH
 #include  <norflash.h>
+#endif
+#if CONFIG_PROGRAMMING_SUPPORT
+#include <programming.h>
 #endif
 
 
@@ -100,6 +106,10 @@ int main(void)
 		}	
 	}
 	
+	#if CONFIG_PROGRAMMING_SUPPORT
+	programming_process();
+	#endif
+
 	mlog( "__________________________________________\r\n" );
 	app_enter();
 	return 0;

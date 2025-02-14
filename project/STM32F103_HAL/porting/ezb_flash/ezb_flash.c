@@ -1,4 +1,7 @@
 /**
+ * 
+ * Copyright (c) 2025 Xinkerr
+ * 
  * SPDX-License-Identifier: Apache-2.0
  *
  * Disclaimer / 免责声明
@@ -18,6 +21,7 @@
 #include <ezb_flash.h>
 #include <string.h>
 #include <mcu_header.h>
+#include <mlog.h>
 
 #define WORD_ALIGNMENT          4
 
@@ -36,6 +40,8 @@ int ezb_flash_erase(uint32_t addr, uint32_t size) {
 
     // 计算页数
     numberOfPages = size / FLASH_PAGE_SIZE;
+    if(size % FLASH_PAGE_SIZE)
+        numberOfPages ++;
 
     // 配置擦除结构
     eraseInitStruct.TypeErase = FLASH_TYPEERASE_PAGES;

@@ -1,4 +1,7 @@
 /**
+ * 
+ * Copyright (c) 2025 Xinkerr
+ * 
  * SPDX-License-Identifier: Apache-2.0
  *
  * Disclaimer / 免责声明
