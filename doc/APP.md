@@ -2,9 +2,13 @@
 
 本文档描述如何将应用程序适配至EZBOOT框架，实现EZBOOT的正确引导和OTA升级功能。
 
+## 示例工程
+
+参考：[ezboot-app-example](https://github.com/Xinkerr/ezboot-app-example)
+
 ------
 
-## 步骤详解
+## 适配步骤详解
 
 ### 1. 新建MCU工程
 
@@ -31,7 +35,7 @@
 1. 在 **Options for Target -> C/C++ -> Define** 中添加字段定义 **USER_VECT_TAB_ADDRESS**。![中断向量设置示例1](image/Snipaste_2025-01-04_20-17-15.png)
 
 2. 修改 `system_stm32f1xx.c` 文件中的字段 **VECT_TAB_OFFSET** 的值。
-    
+   
     ![中断向量设置示例2](image/Snipaste_2025-01-04_20-17-42.png)
 
 3. 对于 M0 内核系列芯片，无法使用以上方法，需使用以下代码进行中断向量表的 RAM 重映展：
@@ -83,7 +87,7 @@
 在代码中调用 **ota_mgr** 接口实现 OTA 功能，具体步骤如下：
 
 1. **初始化 OTA 管理程序**
-    
+   
     在程序初始化阶段调用 `ota_mgr_image_hw_init()`。
     
 2. **擦除 OTA 镜像存储区域**
